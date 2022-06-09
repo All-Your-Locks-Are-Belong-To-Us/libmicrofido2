@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "macOS",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_FIDO_INTERNAL"
+            ],
+            "macFrameworkPath": [],
+            "compilerPath": "/opt/homebrew/bin/avr-gcc",
+            "cStandard": "gnu99",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "macos-gcc-arm64"
+        }
+    ],
+    "version": 4
+}
