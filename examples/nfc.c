@@ -7,7 +7,7 @@ static void *example_open() {
     return NULL;
 };
 
-static void example_close() {
+static void example_close(void *handle) {
     // Disable NFC-field.
 }
 
