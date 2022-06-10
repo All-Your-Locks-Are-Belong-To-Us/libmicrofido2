@@ -16,13 +16,13 @@ void iso7816_init(
     const uint8_t  *payload,
     const uint16_t  payload_len
 ) {
+    memset(apdu, 0, sizeof(iso7816_apdu_t));
+
     apdu->payload_len = payload_len;
     apdu->payload_ptr = payload;
     apdu->header.cla = class;
     apdu->header.ins = instruction;
     apdu->header.p1 = p1;
-    apdu->header.lc2 = (uint8_t)((payload_len >> 8) & 0xff);
-    apdu->header.lc3 = (uint8_t)(payload_len & 0xff);
 }
 
 void iso7816_init_from_bytes(

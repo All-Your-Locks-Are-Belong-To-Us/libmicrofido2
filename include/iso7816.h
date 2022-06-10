@@ -15,9 +15,6 @@ typedef struct __attribute__((packed)) iso7816_header {
     uint8_t ins;
     uint8_t p1;
     uint8_t p2;
-    uint8_t lc1;
-    uint8_t lc2;
-    uint8_t lc3;
 } iso7816_header_t;
 
 #define ISO7816_APDU_BUFFER_SIZE(x) (sizeof(iso7816_header_t) + x)

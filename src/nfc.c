@@ -154,7 +154,7 @@ static int tx_short_apdu(
     uint8_t cla_flags
 ) {
     // TODO: Prevent copying if possible.
-    uint8_t apdu[5 + UINT8_MAX + 1];
+    uint8_t apdu[5 + UINT8_MAX];
     uint8_t status_word[2];
     size_t apdu_len;
     int ok = FIDO_ERR_TX;
@@ -167,7 +167,7 @@ static int tx_short_apdu(
     apdu[3] = h->p2;
     apdu[4] = payload_len;
     memcpy(&apdu[5], payload, payload_len);
-    apdu_len = (size_t)(5 + payload_len + 1);
+    apdu_len = (size_t)(5 + payload_len);
 
     if (dev->io.write(dev->io_handle, apdu, apdu_len) < 0) {
         fido_log_debug("%s: write", __func__);
@@ -195,13 +195,6 @@ fail:
 static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
     uint16_t apdu_len = apdu->payload_len;
 
-    if (apdu_len < 2) {
-        fido_log_debug("%s: apdu_len %zu", __func__, apdu_len);
-        return FIDO_ERR_TX;
-    }
-
-    // TODO: validate if this is necessary.
-    apdu_len -= 2; /* trim le1 le2 */
     const uint8_t *apdu_ptr = apdu->payload_ptr;
 
     while (apdu_len > TX_CHUNK_SIZE) {
