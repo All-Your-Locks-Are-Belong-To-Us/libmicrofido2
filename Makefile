@@ -36,8 +36,8 @@ endif
 # Directory settings
 #########################################
 
-BUILDDIR := build/
-SOURCEDIR := src/
+BUILDDIR := build
+SOURCEDIR := src
 SOURCES := $(wildcard $(SOURCEDIR)/*.c)
 OBJECTS := $(patsubst $(SOURCEDIR)/%.c,$(BUILDDIR)/%.o,$(SOURCES))
 DEPS := $(OBJECTS:.o=.d)
