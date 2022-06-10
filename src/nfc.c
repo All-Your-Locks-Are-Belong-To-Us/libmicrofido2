@@ -160,6 +160,7 @@ static int tx_short_apdu(
     int ok = FIDO_ERR_TX;
 
     memset(&apdu, 0, sizeof(apdu));
+    // Copy the header.
     apdu[0] = h->cla | cla_flags;
     apdu[1] = h->ins;
     apdu[2] = h->p1;
@@ -191,23 +192,20 @@ fail:
     return ok;
 }
 
-static int nfc_do_tx(fido_dev_t *dev, const uint8_t *apdu_ptr, size_t apdu_len) {
-    iso7816_header_t header;
+static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
+    uint16_t apdu_len = apdu->payload_len;
 
-    // Copy the header to check it.
-    if (fido_buf_read(&apdu_ptr, &apdu_len, &header, sizeof(header)) < 0) {
-        fido_log_debug("%s: header", __func__);
-        return FIDO_ERR_INVALID_ARGUMENT;
-    }
     if (apdu_len < 2) {
         fido_log_debug("%s: apdu_len %zu", __func__, apdu_len);
         return FIDO_ERR_TX;
     }
 
+    // TODO: validate if this is necessary.
     apdu_len -= 2; /* trim le1 le2 */
+    const uint8_t *apdu_ptr = apdu->payload_ptr;
 
     while (apdu_len > TX_CHUNK_SIZE) {
-        if (tx_short_apdu(dev, &header, apdu_ptr, TX_CHUNK_SIZE, CLA_CHAIN_CONTINUE) < 0) {
+        if (tx_short_apdu(dev, &apdu->header, apdu_ptr, TX_CHUNK_SIZE, CLA_CHAIN_CONTINUE) < 0) {
             fido_log_debug("%s: chain", __func__);
             return FIDO_ERR_TX;
         }
@@ -215,7 +213,7 @@ static int nfc_do_tx(fido_dev_t *dev, const uint8_t *apdu_ptr, size_t apdu_len) 
         apdu_len -= TX_CHUNK_SIZE;
     }
 
-    if (tx_short_apdu(dev, &header, apdu_ptr, (uint8_t)apdu_len, 0) < 0) {
+    if (tx_short_apdu(dev, &apdu->header, apdu_ptr, (uint8_t)apdu_len, 0) < 0) {
         fido_log_debug("%s: tx_short_apdu", __func__);
         return FIDO_ERR_TX;
     }
@@ -225,48 +223,32 @@ static int nfc_do_tx(fido_dev_t *dev, const uint8_t *apdu_ptr, size_t apdu_len) 
 
 static int nfc_tx(struct fido_dev *dev, const uint8_t cmd, const unsigned char *buf, const size_t len) {
     iso7816_apdu_t apdu;
-    bool buf_is_apdu = false;
-    const uint8_t *ptr;
-    size_t count;
     int ok = FIDO_ERR_TX;
-
-    iso7816_init(&apdu);
 
     switch (cmd) {
     case CTAP_CMD_INIT: /* select */
-        iso7816_set_content(&apdu, 0, 0xa4, 0x04, aid, sizeof(aid));
-        buf_is_apdu = false;
+        iso7816_init(&apdu, 0, 0xa4, 0x04, aid, sizeof(aid));
         break;
     case CTAP_CMD_CBOR: /* wrap cbor */
         if (len > UINT16_MAX) {
         }
-        iso7816_set_content(&apdu, 0x80, 0x10, 0x00, buf, (uint16_t)len);
-        buf_is_apdu = false;
+        iso7816_init(&apdu, 0x80, 0x10, 0x00, buf, (uint16_t)len);
         break;
     case CTAP_CMD_MSG: /* already an apdu */
-        buf_is_apdu = true;
+        iso7816_init_from_bytes(&apdu, buf, len);
         break;
     default:
         fido_log_debug("%s: cmd=%02x", __func__, cmd);
         goto fail;
     }
 
-    if (!buf_is_apdu) {
-        ptr = iso7816_ptr(&apdu);
-        count = iso7816_len(&apdu);
-    } else {
-        ptr = buf;
-        count = len;
-    }
-
-    if (nfc_do_tx(dev, ptr, count) < 0) {
+    if (nfc_do_tx(dev, &apdu) < 0) {
         fido_log_debug("%s: nfc_do_tx", __func__);
         goto fail;
     }
 
     ok = FIDO_OK;
 fail:
-    iso7816_restore(&apdu);
 
     return ok;
 }
