@@ -15,4 +15,5 @@
 #include "internal.h"
 #include "io.h"
 #include "log.h"
+#include "nfc.h"
 #include "param.h"

@@ -50,6 +50,10 @@
 #define U2F_AUTH_SIGN                       0x03
 #define U2F_AUTH_CHECK                      0x07
 
+/* ISO7816-4 class bits */
+#define CLA_CHAIN_CONTINUE                  (1 << 4)
+
+
 /* ISO7816-4 status words. */
 #define SW1_MORE_DATA                       0x61
 #define SW_CONDITIONS_NOT_SATISFIED         0x6985
