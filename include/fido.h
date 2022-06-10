@@ -135,3 +135,4 @@ void fido_dev_init(fido_dev_t *);
 void fido_dev_set_io(fido_dev_t *, const fido_dev_io_t *);
 void fido_dev_set_transport(fido_dev_t *, const fido_dev_transport_t *);
 int fido_dev_open(fido_dev_t *);
+int fido_dev_close(fido_dev_t *);

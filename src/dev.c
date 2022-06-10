@@ -5,9 +5,9 @@ static int nonce = 1234; // The only cryptographically secure nonce
 
 /**
  * @brief Initialize a FIDO device.
- * 
- * Brings the device into a known state, resetting everything.
- * 
+ *
+ * Brings the device structure into a known state, resetting everything.
+ *
  * @param dev A pointer to the uninitialized FIDO device.
  */
 void fido_dev_init(fido_dev_t *dev) {
@@ -16,12 +16,12 @@ void fido_dev_init(fido_dev_t *dev) {
     dev->io.read = NULL;
     dev->io.write = NULL;
     dev->io_handle = NULL;
-    dev->nonce = ++nonce; 
+    dev->nonce = ++nonce;
 }
 
 /**
  * @brief Set the I/O functions for a device.
- * 
+ *
  * @param dev A pointer to the FIDO device to set the I/O functions for.
  * @param io The I/O functions to set.
  */
@@ -32,7 +32,7 @@ void fido_dev_set_io(fido_dev_t *dev, const fido_dev_io_t *io) {
 
 /**
  * @brief Set the transport functions for a device.
- * 
+ *
  * @param dev A pointer to the FIDO device to set the transport functions for.
  * @param transport The transport functions to set.
  */
@@ -42,8 +42,8 @@ void fido_dev_set_transport(fido_dev_t *dev, const fido_dev_transport_t *transpo
 
 /**
  * @brief Open a FIDO device sending an initialization command.
- * 
- * @param dev 
+ *
+ * @param dev
  * @return int A FIDO_ERR
  */
 static int fido_dev_open_tx(fido_dev_t *dev) {
@@ -143,8 +143,10 @@ fail:
 }
 
 /**
- * @brief 
- * 
+ * @brief Open a FIDO device.
+ *
+ * Initializes the connection and makes it ready to communicate with.
+ *
  * @param dev A pointer to the FIDO device to be opened.
  * @return int A FIDO_ERR
  */
@@ -157,6 +159,25 @@ int fido_dev_open(fido_dev_t *dev) {
     ) {
         return r;
     }
+
+    return FIDO_OK;
+}
+
+/**
+ * @brief Close a FIDO device.
+ * 
+ * Closes the connection to the device.
+ *
+ * @param dev A pointer to the FIDO device to be closed.
+ * @return int A FIDO_ERR
+ */
+int fido_dev_close(fido_dev_t * dev) {
+    if (dev->io.close == NULL) {
+        fido_log_debug("%s: device without close function", __func__);
+        return FIDO_ERR_INVALID_ARGUMENT;
+    }
+    dev->io.close(dev->io_handle);
+    dev->io_handle = NULL;
 
     return FIDO_OK;
 }
