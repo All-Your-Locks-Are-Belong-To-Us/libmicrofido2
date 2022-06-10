@@ -12,8 +12,12 @@
 #include "array.h"
 #include "dev.h"
 #include "error.h"
+
+#ifdef _FIDO_INTERNAL
 #include "internal.h"
-#include "io.h"
 #include "log.h"
+#endif
+
+#include "io.h"
 #include "nfc.h"
 #include "param.h"

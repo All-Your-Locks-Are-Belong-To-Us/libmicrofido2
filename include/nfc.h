@@ -3,7 +3,6 @@
 #include <stddef.h>
 
 #include "fido.h"
-#include "iso7816.h"
 
 /**
  * @brief Initialize a FIDO device to use NFC.

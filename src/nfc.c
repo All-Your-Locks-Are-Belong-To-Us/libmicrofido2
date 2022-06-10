@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-
+#include "iso7816.h"
 
 #ifdef __AVR__
 #include <avr/pgmspace.h>
@@ -223,7 +223,7 @@ static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
 
 static int nfc_tx(struct fido_dev *dev, const uint8_t cmd, const unsigned char *buf, const size_t len) {
     iso7816_apdu_t apdu;
-    int ok = FIDO_ERR_TX;
+    int status = FIDO_ERR_TX;
 
     switch (cmd) {
     case CTAP_CMD_INIT: /* select */
@@ -247,10 +247,10 @@ static int nfc_tx(struct fido_dev *dev, const uint8_t cmd, const unsigned char *
         goto fail;
     }
 
-    ok = FIDO_OK;
+    status = FIDO_OK;
 fail:
 
-    return ok;
+    return status;
 }
 
 static const fido_dev_transport_t nfc_transport = {

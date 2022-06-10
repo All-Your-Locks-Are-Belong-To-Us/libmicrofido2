@@ -5,6 +5,7 @@
  */
 
 #include "fido.h"
+#include "iso7816.h"
 #include <string.h>
 
 void iso7816_init(

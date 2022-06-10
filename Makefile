@@ -25,6 +25,7 @@ EXAMPLES_PREPROCESSOR_MACROS :=
 INCLUDE_DIRS := include
 CFLAGS := -std=gnu99 -fstack-usage -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall -Os
 ARFLAGS :=
+PREPROCESSOR_MACROS := _FIDO_INTERNAL
 
 ifeq ($(DEBUG), 1)
 	DEBUG_FLAGS := -ggdb
@@ -56,6 +57,7 @@ TARGET := $(BUILDDIR)/lib$(LIBRARY_NAME).a
 LIBRARY_PREPROCESSOR_MACROS_EXPANDED := $(addprefix -D, $(LIBRARY_PREPROCESSOR_MACROS))
 EXAMPLES_PREPROCESSOR_MACROS_EXPANDED := $(addprefix -D, $(EXAMPLES_PREPROCESSOR_MACROS))
 CFLAGS += $(addprefix -I, $(INCLUDE_DIRS))
+CFLAGS += $(addprefix -D, $(PREPROCESSOR_MACROS))
 
 # Enable dependency rule generation
 CFLAGS += -MMD
