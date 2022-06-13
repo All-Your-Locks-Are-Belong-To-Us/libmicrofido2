@@ -10,6 +10,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "io.h"
 
@@ -76,3 +77,17 @@ int fido_dev_open(fido_dev_t *dev);
  * @return int FIDO_OK when the operation was successful.
  */
 int fido_dev_close(fido_dev_t *dev);
+
+/**
+ * @brief Make the library use U2F for a device.
+ *
+ * @param dev A pointer to the device to use U2F for.
+ */
+void fido_dev_force_u2f(fido_dev_t *dev);
+
+/**
+ * @brief Test whether a device is FIDO-capable.
+ *
+ * @param dev A pointer to the device to check.
+ */
+bool fido_dev_is_fido(fido_dev_t *dev);
