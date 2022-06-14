@@ -18,6 +18,7 @@ AR := $(TOOLCHAIN_ROOT)/bin/avr-ar
 CPU := atmega1284p
 
 EXTERNAL_LIBS :=
+EXTERNALS := cb0r
 
 COMMONFLAGS := -Werror=shadow -mmcu=$(CPU)
 LIBRARY_PREPROCESSOR_MACROS :=
@@ -39,9 +40,9 @@ endif
 
 BUILDDIR := build
 SOURCEDIR := src
+EXTERNALDIR := external
 SOURCES := $(wildcard $(SOURCEDIR)/*.c)
 OBJECTS := $(patsubst $(SOURCEDIR)/%.c,$(BUILDDIR)/%.o,$(SOURCES))
-DEPS := $(OBJECTS:.o=.d)
 EXAMPLEDIR := examples/
 EXAMPLES := $(wildcard $(EXAMPLEDIR)/*.c)
 EXAMPLES_BUILDDIR := $(BUILDDIR)/$(EXAMPLEDIR)
@@ -50,13 +51,22 @@ EXAMPLES_BINARIES := $(patsubst $(EXAMPLEDIR)/%.c,$(EXAMPLES_BUILDDIR)/%.elf,$(E
 LIBRARY_NAME := microfido2
 TARGET := $(BUILDDIR)/lib$(LIBRARY_NAME).a
 
+EXTERNAL_DIRS = $(addprefix $(EXTERNALDIR)/, $(EXTERNALS))
+EXTERNAL_BUILDDIRS = $(addprefix $(BUILDDIR)/, $(EXTERNAL_DIRS))
+EXTERNAL_INCLUDEDIRS = $(addsuffix /include, $(EXTERNAL_DIRS))
+EXTERNAL_SOURCEDIRS = $(addsuffix /src, $(EXTERNAL_DIRS))
+EXTERNAL_SOURCES := $(foreach srcdir, $(EXTERNAL_SOURCEDIRS), $(wildcard $(srcdir)/*.c))
+EXTERNAL_OBJECTS := $(BUILDDIR)/$(subst src/,,$(EXTERNAL_SOURCES:.c=.o))
+
+DEPS := $(OBJECTS:.o=.d) $(EXTERNAL_OBJECTS:.o=.d)
+
 #########################################
 # Flags
 #########################################
 
 LIBRARY_PREPROCESSOR_MACROS_EXPANDED := $(addprefix -D, $(LIBRARY_PREPROCESSOR_MACROS))
 EXAMPLES_PREPROCESSOR_MACROS_EXPANDED := $(addprefix -D, $(EXAMPLES_PREPROCESSOR_MACROS))
-CFLAGS += $(addprefix -I, $(INCLUDE_DIRS))
+CFLAGS += $(addprefix -I, $(INCLUDE_DIRS)) $(addprefix -I, $(EXTERNAL_INCLUDEDIRS))
 CFLAGS += $(addprefix -D, $(PREPROCESSOR_MACROS))
 
 # Enable dependency rule generation
@@ -95,5 +105,15 @@ $(BUILDDIR)/%.o : $(SOURCEDIR)/%.c $(BUILDDIR)
 $(EXAMPLES_BUILDDIR)/%.elf : $(EXAMPLEDIR)/%.c $(EXAMPLES_BUILDDIR)
 	$(CC) $(COMMONFLAGS) $(CFLAGS) $(EXAMPLES_PREPROCESSOR_MACROS_EXPANDED) $(DEBUG_FLAGS) $< $(EXAMPLE_LDFLAGS) -o $@
 
-$(TARGET) : $(OBJECTS)
+$(TARGET) : $(EXTERNAL_OBJECTS) $(OBJECTS)
 	$(AR) rcs $(ARFLAGS) $@ $?
+
+define generateExternalRule
+$(1):
+	mkdir -p $(1)
+
+$(1)/%.o: $(subst $(BUILDDIR)/,,$(1))/src/%.c $(1)
+	$(CC) $$(COMMONFLAGS) $$(CFLAGS) $$(LIBRARY_PREPROCESSOR_MACROS_EXPANDED) $$(DEBUG_FLAGS) -c -o $$@ $$<
+endef
+
+$(foreach externalbuilddir, $(EXTERNAL_BUILDDIRS), $(eval $(call generateExternalRule, $(externalbuilddir))))
