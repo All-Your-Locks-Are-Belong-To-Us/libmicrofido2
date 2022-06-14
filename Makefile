@@ -82,7 +82,11 @@ all: $(TARGET)
 
 .PHONY: clean
 clean:
-	$(RM) $(BUILDDIR)/**/*.o $(BUILDDIR)/**/*.d $(TARGET) $(EXAMPLES_BINARIES)
+	$(RM) $(shell find $(BUILDDIR) -name "*.o")\
+		$(shell find $(BUILDDIR) -name "*.d")\
+		$(shell find $(BUILDDIR) -name "*.su")\
+		$(TARGET)\
+		$(EXAMPLES_BINARIES)
 
 .PHONY: examples
 examples: all $(EXAMPLES_BINARIES)
