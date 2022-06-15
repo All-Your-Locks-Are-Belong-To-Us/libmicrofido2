@@ -67,11 +67,11 @@ clean:
 .PHONY: examples
 examples: all $(EXAMPLES_BINARIES)
 
-$(shell dirname $(BUILDDIR)):
+$(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
-$(shell dirname $(EXAMPLES_BUILDDIR)): $(BUILDDIR)
-	mkdir $(EXAMPLES_BUILDDIR)
+$(EXAMPLES_BUILDDIR): $(BUILDDIR)
+	mkdir -p $(EXAMPLES_BUILDDIR)
 
 #########################################
 # Compiling
