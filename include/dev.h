@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #include "io.h"
+#include "info.h"
 
 typedef struct __attribute__((packed)) fido_ctap_info {
     uint64_t nonce;    // echoed nonce
@@ -31,6 +32,8 @@ typedef struct fido_dev {
     size_t                  tx_len;     // length of HID output reports
     uint64_t                nonce;      // nonce used for this device
     fido_ctap_info_t        attr;       // device attributes
+    int                     flags;      // flags for the device (indicating special capabilities)
+    uint64_t                maxmsgsize; // maximum message size
 } fido_dev_t;
 
 /**
@@ -79,15 +82,17 @@ int fido_dev_open(fido_dev_t *dev);
 int fido_dev_close(fido_dev_t *dev);
 
 /**
- * @brief Make the library use U2F for a device.
- *
- * @param dev A pointer to the device to use U2F for.
- */
-void fido_dev_force_u2f(fido_dev_t *dev);
-
-/**
  * @brief Test whether a device is FIDO-capable.
  *
  * @param dev A pointer to the device to check.
  */
 bool fido_dev_is_fido(fido_dev_t *dev);
+
+/**
+ * @brief Retrieve information about a device.
+ * 
+ * @param dev A pointer to the device to retrieve information for.
+ * @param ci A pointer to the information structure to store the retrieved info in.
+ * @return int FIDO_OK if operation was successful.
+ */
+int fido_dev_get_cbor_info_wait(fido_dev_t *dev, fido_cbor_info_t *ci);

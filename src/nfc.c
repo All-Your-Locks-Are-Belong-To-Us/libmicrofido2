@@ -13,19 +13,11 @@
 #include <string.h>
 #include "iso7816.h"
 
-#ifdef __AVR__
-#include <avr/pgmspace.h>
-#define AVR_PROGMEM PROGMEM
-#define memcmp memcmp_P
-#else
-#define AVR_PROGMEM
-#endif
-
 #define TX_CHUNK_SIZE 240
 
-static const uint8_t aid[]                              = { 0xa0, 0x00, 0x00, 0x06, 0x47, 0x2f, 0x00, 0x01 };
-static const uint8_t fido_version_u2f[] AVR_PROGMEM     = { 'U', '2', 'F', '_', 'V', '2' };
-static const uint8_t fido_version_fido2[] AVR_PROGMEM   = { 'F', 'I', 'D', 'O', '_', '2', '_', '0' };
+static const uint8_t aid[]                                  = { 0xa0, 0x00, 0x00, 0x06, 0x47, 0x2f, 0x00, 0x01 };
+static const uint8_t fido_version_u2f[] PROGMEM_MARKER      = { 'U', '2', 'F', '_', 'V', '2' };
+static const uint8_t fido_version_fido2[] PROGMEM_MARKER    = { 'F', 'I', 'D', 'O', '_', '2', '_', '0' };
 
 static int rx_init(fido_dev_t *dev, unsigned char *buf, const size_t len)
 {
@@ -48,9 +40,9 @@ static int rx_init(fido_dev_t *dev, unsigned char *buf, const size_t len)
 
     n -= 2;
 
-    if (n == sizeof(fido_version_u2f) && memcmp(f, fido_version_u2f, sizeof(fido_version_u2f)) == 0) {
+    if (n == sizeof(fido_version_u2f) && memcmp_progmem(f, fido_version_u2f, sizeof(fido_version_u2f)) == 0) {
         attr->flags = FIDO_CAP_CBOR;
-    } else if (n == sizeof(fido_version_fido2) && memcmp(f, fido_version_fido2, sizeof(fido_version_fido2)) == 0) {
+    } else if (n == sizeof(fido_version_fido2) && memcmp_progmem(f, fido_version_fido2, sizeof(fido_version_fido2)) == 0) {
         attr->flags = FIDO_CAP_CBOR | FIDO_CAP_NMSG;
     } else {
         fido_log_debug("%s: unknown version string", __func__);

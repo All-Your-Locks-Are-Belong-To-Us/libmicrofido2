@@ -21,3 +21,4 @@
 #include "io.h"
 #include "nfc.h"
 #include "param.h"
+#include "info.h"
