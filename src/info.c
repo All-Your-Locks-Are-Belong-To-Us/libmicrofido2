@@ -278,19 +278,19 @@ static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value
             case COSE_ALGORITHM_ES256:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES256;
                 break;
-            case CODE_ALGORITHM_ES384:
+            case COSE_ALGORITHM_ES384:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES384;
                 break;
-            case CODE_ALGORITHM_ES512:
+            case COSE_ALGORITHM_ES512:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES512;
                 break;
-            case CODE_ALGORITHM_ES256K:
+            case COSE_ALGORITHM_ES256K:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES256K;
                 break;
-            case CODE_ALGORITHM_PS256:
+            case COSE_ALGORITHM_PS256:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_PS256;
                 break;
-            case CODE_ALGORITHM_RS512:
+            case COSE_ALGORITHM_RS256:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_RS256;
                 break;
         }
