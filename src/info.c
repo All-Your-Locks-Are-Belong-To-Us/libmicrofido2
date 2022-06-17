@@ -259,9 +259,8 @@ static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
         ci->transports |= FIDO_TRANSPORT_BLE;
     } else if(CBOR_STR_MEMCMP(element, fido_transport_internal)) {
         ci->transports |= FIDO_TRANSPORT_INTERNAL;
-    } else {
-        return FIDO_ERR_INVALID_ARGUMENT;
     }
+    // Platform MUST tolerate unknown values: https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#authenticatorGetInfo
     return FIDO_OK;
 }
 
