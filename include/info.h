@@ -58,6 +58,11 @@ typedef uint8_t fido_cbor_pin_protocol_t;
 // See https://www.w3.org/TR/webauthn-2/#dictdef-publickeycredentialparameters
 #define FIDO_CREDENTIAL_GENERATION_ES256                    BITFIELD(0)
 #define FIDO_CREDENTIAL_GENERATION_EdDSA                    BITFIELD(1)
+#define FIDO_CREDENTIAL_GENERATION_ES384                    BITFIELD(2)
+#define FIDO_CREDENTIAL_GENERATION_ES512                    BITFIELD(3)
+#define FIDO_CREDENTIAL_GENERATION_ES256K                   BITFIELD(4)
+#define FIDO_CREDENTIAL_GENERATION_PS256                    BITFIELD(5)
+#define FIDO_CREDENTIAL_GENERATION_RS256                    BITFIELD(6)
 typedef uint8_t fido_cbor_algorithm_t;
 
 // According to the Webauthn Standard: https://w3c.github.io/webauthn/#typedefdef-cosealgorithmidentifier
@@ -66,6 +71,16 @@ typedef uint8_t fido_cbor_algorithm_t;
 #define COSE_ALGORITHM_EdDSA    (-8)
 // P-256 curve.
 #define COSE_ALGORITHM_ES256    (-7)
+// P-384 curve.
+#define COSE_ALGORITHM_ES384    (-35)
+// P-512 curve.
+#define COSE_ALGORITHM_ES512    (-36)
+// secp256k1 curve.
+#define COSE_ALGORITHM_ES256K   (-47)
+// RSA-PSS.
+#define COSE_ALGORITHM_PS256    (-37)
+// RSA-PKCS.
+#define COSE_ALGORITHM_RS256    (-257)
 
 // See https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#authenticatorGetInfo
 typedef struct fido_cbor_info {

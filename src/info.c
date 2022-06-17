@@ -156,7 +156,7 @@ static int cbor_info_decode_extensions(const cb0r_t element, void *ci) {
  * @param ci User-passed argument (here: CBOR info).
  * @return int FIDO_OK if extensions could be parsed.
  */
-static int cbor_info_parse_options(const cb0r_t key, const cb0r_t value, void *ci) {
+static int cbor_info_decode_options(const cb0r_t key, const cb0r_t value, void *ci) {
     if (!cbor_bytestring_is_definite(key)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
@@ -278,6 +278,21 @@ static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value
             case COSE_ALGORITHM_ES256:
                 ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES256;
                 break;
+            case CODE_ALGORITHM_ES384:
+                ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES384;
+                break;
+            case CODE_ALGORITHM_ES512:
+                ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES512;
+                break;
+            case CODE_ALGORITHM_ES256K:
+                ci->algorithms |= FIDO_CREDENTIAL_GENERATION_ES256K;
+                break;
+            case CODE_ALGORITHM_PS256:
+                ci->algorithms |= FIDO_CREDENTIAL_GENERATION_PS256;
+                break;
+            case CODE_ALGORITHM_RS512:
+                ci->algorithms |= FIDO_CREDENTIAL_GENERATION_RS256;
+                break;
         }
     }
     return FIDO_OK;
@@ -308,7 +323,7 @@ static int parse_info_reply_entry(const cb0r_t key, const cb0r_t value, void *ar
         case 3: // aaguid
             return copy_aaguid(value, ci);
         case 4: // options
-            return cbor_iter_map(value, cbor_info_parse_options, ci);
+            return cbor_iter_map(value, cbor_info_decode_options, ci);
         case 5: // maxMsgSize
             return decode_uint64(value, &ci->maxmsgsize);
         case 6: // pinProtocols
