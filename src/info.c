@@ -354,14 +354,18 @@ static int fido_dev_get_cbor_info_rx(fido_dev_t *dev, fido_cbor_info_t *ci) {
 
     fido_cbor_info_reset(ci);
 
-    if ((msglen = fido_rx(dev, CTAP_CMD_CBOR, msg, FIDO_MAXMSG)) < 0) {
+    if ((msglen = fido_rx(dev, CTAP_CMD_CBOR, msg, sizeof(msg))) < 0) {
         fido_log_debug("%s: fido_rx", __func__);
         return FIDO_ERR_RX;
     }
 
+    if (msg[0] != FIDO_ERR_SUCCESS) {
+        return msg[0];
+    }
+
     cb0r_s map;
     // This should always be a map.
-    if (!cb0r_read(msg, msglen, &map) || map.type != CB0R_MAP) {
+    if (!cb0r_read(msg+1, msglen-1, &map) || map.type != CB0R_MAP) {
         return  FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 

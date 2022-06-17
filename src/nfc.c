@@ -224,8 +224,6 @@ static int nfc_tx(struct fido_dev *dev, const uint8_t cmd, const unsigned char *
         iso7816_init(&apdu, 0, 0xa4, 0x04, aid, sizeof(aid));
         break;
     case CTAP_CMD_CBOR: /* wrap cbor */
-        if (len > UINT16_MAX) {
-        }
         iso7816_init(&apdu, 0x80, 0x10, 0x00, buf, (uint16_t)len);
         break;
     case CTAP_CMD_MSG: /* already an apdu */

@@ -43,3 +43,8 @@ int cbor_iter_array(cb0r_t cbor_array, cbor_parse_array_item *cb, void *data) {
     }
     return FIDO_OK;
 }
+
+bool cbor_bytestring_is_definite(const cb0r_t val) {
+    return val->type == CB0R_UTF8 &&
+        val->count != CB0R_STREAM;
+}
