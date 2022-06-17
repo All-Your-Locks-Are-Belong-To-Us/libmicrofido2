@@ -24,14 +24,14 @@ COMMONFLAGS := -Werror=shadow -mmcu=$(CPU)
 LIBRARY_PREPROCESSOR_MACROS :=
 EXAMPLES_PREPROCESSOR_MACROS :=
 INCLUDE_DIRS := include
-CFLAGS := -std=gnu99 -fstack-usage -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall -Os
+CFLAGS := -std=gnu99 -fstack-usage -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
 ARFLAGS :=
 PREPROCESSOR_MACROS := _FIDO_INTERNAL
 
 ifeq ($(DEBUG), 1)
-	DEBUG_FLAGS := -ggdb
+	DEBUG_FLAGS := -ggdb -O0
 else
-	DEBUG_FLAGS :=
+	DEBUG_FLAGS := -Os
 endif
 
 #########################################
