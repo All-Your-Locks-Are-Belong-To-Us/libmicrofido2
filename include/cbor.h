@@ -27,8 +27,16 @@ int cbor_iter_map(cb0r_t cbor_map, cbor_parse_map_item *cb, void *data);
 int cbor_iter_array(cb0r_t cbor_array, cbor_parse_array_item *cb, void* data);
 
 /**
- * @brief Tests whether the given byte string is definite.
+ * @brief Tests whether the given UTF-8 string is definite.
  * 
+ * @param val The value to test.
+ * @return true or false.
+ */
+bool cbor_utf8string_is_definite(const cb0r_t val);
+
+/**
+ * @brief Tests whether the given byte string is definite.
+ *
  * @param val The value to test.
  * @return true or false.
  */

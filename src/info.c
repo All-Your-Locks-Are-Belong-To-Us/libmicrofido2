@@ -100,7 +100,7 @@ static int decode_uint64(const cb0r_t value, uint64_t *target) {
 static int cbor_info_decode_versions(const cb0r_t element, void *ci) {
     fido_cbor_info_t* info = (fido_cbor_info_t*) ci;
 
-    if (!cbor_bytestring_is_definite(element)) {
+    if (!cbor_utf8string_is_definite(element)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
@@ -127,22 +127,22 @@ static int cbor_info_decode_versions(const cb0r_t element, void *ci) {
  * @return int FIDO_OK if extensions could be parsed.
  */
 static int cbor_info_decode_extensions(const cb0r_t element, void *ci) {
-    if (!cbor_bytestring_is_definite(element)) {
+    if (!cbor_utf8string_is_definite(element)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
     fido_cbor_info_t* info = (fido_cbor_info_t*) ci;
 
     if(CBOR_STR_MEMCMP(element, fido_extension_cred_blob)) {
-        info->versions |= FIDO_EXTENSION_CRED_BLOB;
+        info->extensions |= FIDO_EXTENSION_CRED_BLOB;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_hmac_secret)) {
-        info->versions |= FIDO_EXTENSION_HMAC_SECRET;
+        info->extensions |= FIDO_EXTENSION_HMAC_SECRET;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_cred_protect)) {
-        info->versions |= FIDO_EXTENSION_CRED_PROTECT;
+        info-extensions |= FIDO_EXTENSION_CRED_PROTECT;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_large_blob_key)) {
-        info->versions |= FIDO_EXTENSION_LARGE_BLOB_KEY;
+        info->extensions |= FIDO_EXTENSION_LARGE_BLOB_KEY;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_min_pin_length)) {
-        info->versions |= FIDO_EXTENSION_MIN_PIN_LENGTH;
+        info->extensions |= FIDO_EXTENSION_MIN_PIN_LENGTH;
     }
 
     return FIDO_OK;
@@ -157,7 +157,7 @@ static int cbor_info_decode_extensions(const cb0r_t element, void *ci) {
  * @return int FIDO_OK if extensions could be parsed.
  */
 static int cbor_info_decode_options(const cb0r_t key, const cb0r_t value, void *ci) {
-    if (!cbor_bytestring_is_definite(key)) {
+    if (!cbor_utf8string_is_definite(key)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
@@ -245,15 +245,20 @@ static int cbor_info_decode_protocol(const cb0r_t element, void *arg) {
 
 
 static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
-    fido_cbor_info_t *ci = (fido_cbor_info_t*)ci;
+    fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
+
+    if (!cbor_utf8string_is_definite(element)) {
+        return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+    }
+
     if(CBOR_STR_MEMCMP(element, fido_transport_usb)) {
         ci->transports |= FIDO_TRANSPORT_USB;
     } else if(CBOR_STR_MEMCMP(element, fido_transport_nfc)) {
-        ci->versions |= FIDO_TRANSPORT_NFC;
+        ci->transports |= FIDO_TRANSPORT_NFC;
     } else if(CBOR_STR_MEMCMP(element, fido_transport_ble)) {
-        ci->versions |= FIDO_TRANSPORT_BLE;
+        ci->transports |= FIDO_TRANSPORT_BLE;
     } else if(CBOR_STR_MEMCMP(element, fido_transport_internal)) {
-        ci->versions |= FIDO_TRANSPORT_INTERNAL;
+        ci->transports |= FIDO_TRANSPORT_INTERNAL;
     } else {
         return FIDO_ERR_INVALID_ARGUMENT;
     }
@@ -262,7 +267,8 @@ static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
 
 static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
-    if (!cbor_bytestring_is_definite(key)) {
+
+    if (!cbor_utf8string_is_definite(key)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
