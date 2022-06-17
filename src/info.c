@@ -138,7 +138,7 @@ static int cbor_info_decode_extensions(const cb0r_t element, void *ci) {
     } else if(CBOR_STR_MEMCMP(element, fido_extension_hmac_secret)) {
         info->extensions |= FIDO_EXTENSION_HMAC_SECRET;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_cred_protect)) {
-        info-extensions |= FIDO_EXTENSION_CRED_PROTECT;
+        info->extensions |= FIDO_EXTENSION_CRED_PROTECT;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_large_blob_key)) {
         info->extensions |= FIDO_EXTENSION_LARGE_BLOB_KEY;
     } else if(CBOR_STR_MEMCMP(element, fido_extension_min_pin_length)) {
