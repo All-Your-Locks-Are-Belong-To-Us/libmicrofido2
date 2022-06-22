@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020-2022 Yubico AB. All rights reserved.
  * Copyright (c) 2022 Felix Gohla, Konrad Hanff, Tobias Kantusch,
  *                    Quentin Kuth, Felix Roth. All rights reserved.
  *
