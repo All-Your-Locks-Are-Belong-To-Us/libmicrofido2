@@ -20,8 +20,6 @@ typedef struct __attribute__((packed)) iso7816_header {
     uint8_t p2;
 } iso7816_header_t;
 
-#define ISO7816_APDU_BUFFER_SIZE(x) (sizeof(iso7816_header_t) + x)
-
 typedef struct iso7816_apdu {
     uint16_t            payload_len;
     iso7816_header_t    header;
