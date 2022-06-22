@@ -417,7 +417,7 @@ static int fido_dev_get_cbor_info_tx(fido_dev_t *dev) {
  * @return int FIDO_OK if transmission succeeded.
  */
 static int fido_dev_get_cbor_info_rx(fido_dev_t *dev, fido_cbor_info_t *ci) {
-    unsigned char   msg[dev->maxmsgsize];
+    unsigned char   msg[FIDO_MAXMSG];
     int             msglen;
 
     fido_log_debug("%s: dev=%p, ci=%p, ms=%d", __func__, (void *)dev, (void *)ci, *ms);
