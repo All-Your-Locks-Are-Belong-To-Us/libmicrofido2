@@ -1,2 +1,1 @@
-# libmicrofido2
-Minimal FIDO2 library for microcontrollers
+# libmicrofido2 - Minimal FIDO2 Library for Microcontrollers

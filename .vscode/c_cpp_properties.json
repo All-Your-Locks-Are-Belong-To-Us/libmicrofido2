@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "name": "macOS",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_FIDO_INTERNAL"
+            ],
+            "macFrameworkPath": [],
+            "compilerPath": "/opt/homebrew/bin/avr-gcc",
+            "cStandard": "gnu99",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "macos-gcc-arm64"
+        },
+        {
+            "name": "Arch",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_FIDO_INTERNAL"
+            ],
+            "compilerPath": "/usr/bin/avr-gcc",
+            "cStandard": "gnu99",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
