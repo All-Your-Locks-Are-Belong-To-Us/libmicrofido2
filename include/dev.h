@@ -15,6 +15,18 @@
 #include "io.h"
 #include "info.h"
 
+/* internal device capability flags */
+#define FIDO_DEV_PIN_SET        BITFIELD(0)
+#define FIDO_DEV_CRED_PROT      BITFIELD(1)
+#define FIDO_DEV_CREDMAN        BITFIELD(2)
+#define FIDO_DEV_PIN_PROTOCOL_1 BITFIELD(3)
+#define FIDO_DEV_PIN_PROTOCOL_2 BITFIELD(4)
+#define FIDO_DEV_UV_SET         BITFIELD(5)
+#define FIDO_DEV_TOKEN_PERMS    BITFIELD(6)
+#define FIDO_DEV_LARGE_BLOB     BITFIELD(7)
+#define FIDO_DEV_LARGE_BLOB_KEY BITFIELD(8)
+typedef uint16_t fido_dev_flag_t;
+
 typedef struct __attribute__((packed)) fido_ctap_info {
     uint64_t nonce;    // echoed nonce
     uint8_t  protocol; // ctaphid protocol id
@@ -32,7 +44,7 @@ typedef struct fido_dev {
     size_t                  tx_len;     // length of HID output reports
     uint64_t                nonce;      // nonce used for this device
     fido_ctap_info_t        attr;       // device attributes
-    int                     flags;      // flags for the device (indicating special capabilities)
+    fido_dev_flag_t         flags;      // flags for the device (indicating special capabilities)
     uint64_t                maxmsgsize; // maximum message size
 } fido_dev_t;
 

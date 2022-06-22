@@ -183,10 +183,14 @@ static int cbor_info_decode_options(const cb0r_t key, const cb0r_t value, void *
     } else if(CBOR_STR_MEMCMP(key, fido_option_rk)) {
         info->options |= FIDO_OPTION_RK;
     } else if(CBOR_STR_MEMCMP(key, fido_option_client_pin)) {
+        /* NOTE: We loose information here on whether a PIN is supported but unset (value is False),
+         *       or not supported at all (option unset). However, this library is intended to be
+         *       minimal and hence only interested in whether a PIN is set at all. */
         info->options |= FIDO_OPTION_CLIENT_PIN;
     } else if(CBOR_STR_MEMCMP(key, fido_option_up)) {
         info->options |= FIDO_OPTION_UP;
     } else if(CBOR_STR_MEMCMP(key, fido_option_uv)) {
+        // Same issue as with fido_option_client_pin here
         info->options |= FIDO_OPTION_UV;
     } else if(CBOR_STR_MEMCMP(key, fido_option_pin_uv_auth_token)) {
         info->options |= FIDO_OPTION_PIN_UV_AUTH_TOKEN;

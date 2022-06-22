@@ -14,65 +14,39 @@ static int nonce = 1234; // The only cryptographically secure nonce
 
 
 static void fido_dev_set_extension_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
-    // TODO
-    /*char * const   *ptr = fido_cbor_info_extensions_ptr(info);
-    size_t          len = fido_cbor_info_extensions_len(info);
-
-    for (size_t i = 0; i < len; i++)
-        if (strcmp(ptr[i], "credProtect") == 0)
-            dev->flags |= FIDO_DEV_CRED_PROT;
-    */
+    if (info->extensions & FIDO_EXTENSION_CRED_PROTECT) {
+        dev->flags |= FIDO_DEV_CRED_PROT;
+    }
+    if (info->extensions & FIDO_EXTENSION_LARGE_BLOB_KEY) {
+        dev->flags |= FIDO_DEV_LARGE_BLOB_KEY;
+    }
 }
 
 static void fido_dev_set_option_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
-    // TODO
-    /*
-    char * const   *ptr = fido_cbor_info_options_name_ptr(info);
-    const bool     *val = fido_cbor_info_options_value_ptr(info);
-    size_t          len = fido_cbor_info_options_len(info);
-
-    for (size_t i = 0; i < len; i++) {
-        if (strcmp(ptr[i], "clientPin") == 0) {
-            dev->flags |= val[i] ?
-                          FIDO_DEV_PIN_SET : FIDO_DEV_PIN_UNSET;
-        } else if (strcmp(ptr[i], "credMgmt") == 0 ||
-                   strcmp(ptr[i], "credentialMgmtPreview") == 0) {
-            if (val[i]) {
-                dev->flags |= FIDO_DEV_CREDMAN;
-            }
-        } else if (strcmp(ptr[i], "uv") == 0) {
-            dev->flags |= val[i] ?
-                          FIDO_DEV_UV_SET : FIDO_DEV_UV_UNSET;
-        } else if (strcmp(ptr[i], "pinUvAuthToken") == 0) {
-            if (val[i]) {
-                dev->flags |= FIDO_DEV_TOKEN_PERMS;
-            }
-        }
+    if(info->options & FIDO_OPTION_CLIENT_PIN) {
+        dev->flags |= FIDO_DEV_PIN_SET;
     }
-    */
+    if(info->options & FIDO_OPTION_CRED_MGMT || info->options & FIDO_OPTION_CREDENTIAL_MANAGEMENT_PREVIEW) {
+        dev->flags |= FIDO_DEV_CREDMAN;
+    }
+    if(info->options & FIDO_OPTION_UV) {
+        dev->flags |= FIDO_DEV_UV_SET;
+    }
+    if(info->options & FIDO_OPTION_PIN_UV_AUTH_TOKEN) {
+        dev->flags |= FIDO_DEV_TOKEN_PERMS;
+    }
+    if(info->options & FIDO_OPTION_LARGE_BLOBS) {
+        dev->flags |= FIDO_DEV_LARGE_BLOB;
+    }
 }
 
 static void fido_dev_set_protocol_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
-    // TODO
-    /*
-    const uint8_t  *ptr = fido_cbor_info_protocols_ptr(info);
-    size_t          len = fido_cbor_info_protocols_len(info);
-
-    for (size_t i = 0; i < len; i++) {
-        switch (ptr[i]) {
-            case CTAP_PIN_PROTOCOL1:
-                dev->flags |= FIDO_DEV_PIN_PROTOCOL1;
-                break;
-            case CTAP_PIN_PROTOCOL2:
-                dev->flags |= FIDO_DEV_PIN_PROTOCOL2;
-                break;
-            default:
-                fido_log_debug("%s: unknown protocol %u", __func__,
-                               ptr[i]);
-                break;
-        }
+    if(info->protocols & FIDO_PIN_PROTOCOL_1){
+        dev->flags |= FIDO_DEV_PIN_PROTOCOL_1;
     }
-    */
+    if(info->protocols & FIDO_PIN_PROTOCOL_2){
+        dev->flags |= FIDO_DEV_PIN_PROTOCOL_2;
+    }
 }
 
 static void fido_dev_set_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
@@ -186,8 +160,6 @@ static int fido_dev_open_rx(fido_dev_t *dev) {
 
     r = FIDO_OK;
 fail:
-    // fido_cbor_info_free(&info);
-
     if (r != FIDO_OK) {
         dev->io.close(dev->io_handle);
         dev->io_handle = NULL;
