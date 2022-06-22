@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "array.h"
 #include "dev.h"
 #include "error.h"
 
