@@ -9,6 +9,7 @@
 
 #include "fido.h"
 #include "utils.h"
+#include <string.h>
 
 #include <string.h>
 
@@ -63,7 +64,7 @@ void fido_dev_init(fido_dev_t *dev) {
     dev->tx_len = 0;
     dev->nonce = ++nonce;
     dev->flags = 0;
-    dev->maxmsgsize = 0;
+    dev->maxmsgsize = FIDO_MAXMSG;
 
     memset(&(dev->io),        0, sizeof(fido_dev_io_t));
     memset(&(dev->attr),      0, sizeof(fido_ctap_info_t));
@@ -159,7 +160,7 @@ static int fido_dev_open_rx(fido_dev_t *dev) {
     }
 
     if (fido_dev_is_fido(dev)) {
-        dev->maxmsgsize = info.maxmsgsize;
+        dev->maxmsgsize = info.maxmsgsize < FIDO_MAXMSG ? info.maxmsgsize : FIDO_MAXMSG;
         fido_log_debug("%s: FIDO_MAXMSG=%d, maxmsgsize=%lu", __func__,
             FIDO_MAXMSG, (unsigned long)dev->maxmsgsize);
     }
