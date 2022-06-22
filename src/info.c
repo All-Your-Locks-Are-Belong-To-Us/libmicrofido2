@@ -61,11 +61,6 @@ static const char fido_transport_internal[] PROGMEM_MARKER  = "internal";
 // algorithm
 static const char fido_algorithm_key[] PROGMEM_MARKER  = "alg";
 
-/**
- * @brief Resets a CBOR info object.
- * 
- * @param ci The info to reset.
- */
 void fido_cbor_info_reset(fido_cbor_info_t *ci) {
     memset(ci, 0x0, sizeof(*ci));
 }
@@ -75,7 +70,7 @@ void fido_cbor_info_reset(fido_cbor_info_t *ci) {
  * 
  * @param value The value containing the AAGUID.
  * @param ci The info to copy the ID to.
- * @return A FIDO_ERR
+ * @return int FIDO_OK when the operation was successful.
  */
 static int copy_aaguid(const cb0r_t value, fido_cbor_info_t *ci) {
     if (!cbor_bytestring_is_definite(value) || value->length != sizeof(ci->aaguid)) {
@@ -90,7 +85,7 @@ static int copy_aaguid(const cb0r_t value, fido_cbor_info_t *ci) {
  * 
  * @param value The value to decode.
  * @param target A pointer to a location to store the decoded value at.
- * @return int A FIDO_ERR
+ * @return int FIDO_OK when the operation was successful.
  */
 static int decode_uint64(const cb0r_t value, uint64_t *target) {
     if (value->type != CB0R_INT) {
@@ -164,7 +159,7 @@ static int cbor_info_decode_extensions(const cb0r_t element, void *ci) {
  * @param key The key in the map.
  * @param value The value in the map.
  * @param ci User-passed argument (here: CBOR info).
- * @return int FIDO_OK if extensions could be parsed.
+ * @return int FIDO_OK if options could be parsed.
  */
 static int cbor_info_decode_options(const cb0r_t key, const cb0r_t value, void *ci) {
     if (!cbor_utf8string_is_definite(key)) {
@@ -230,8 +225,8 @@ static int cbor_info_decode_options(const cb0r_t key, const cb0r_t value, void *
  * @brief Parse a cb0r element containing a PIN Protocol
  * 
  * @param element The cb0r element containing the byte representing the protocol
- * @param arg The cb0r_info_t
- * @return int FIDO_OK if extensions could be parsed.
+ * @param arg User-passed argument (here: CBOR info).
+ * @return int FIDO_OK if protocol could be parsed.
  */
 static int cbor_info_decode_protocol(const cb0r_t element, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
@@ -253,7 +248,13 @@ static int cbor_info_decode_protocol(const cb0r_t element, void *arg) {
     return FIDO_OK;
 }
 
-
+/**
+ * @brief Parse a cb0r element containing a supported CTAP transport.
+ * 
+ * @param element The cb0r element representing the transport
+ * @param arg User-passed argument (here: CBOR info).
+ * @return int FIDO_OK if transport could be parsed.
+ */
 static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
 
@@ -274,6 +275,14 @@ static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
     return FIDO_OK;
 }
 
+/**
+ * @brief Parse a cb0r key,value pair containing a credential generation algorithm.
+ * 
+ * @param key The cb0r element representing the algorithm key
+ * @param value The cb0r element representing the algorithm identifier
+ * @param arg User-passed argument (here: CBOR info).
+ * @return int FIDO_OK if algorithm could be parsed.
+ */
 static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
 
@@ -313,6 +322,13 @@ static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value
     return FIDO_OK;
 }
 
+/**
+ * @brief Parse a cb0r map that contains the credential generation algorithms.
+ * 
+ * @param element The cb0r element representing the algorithm map
+ * @param arg User-passed argument (here: CBOR info).
+ * @return int FIDO_OK if map could be parsed.
+ */
 static int cbor_info_decode_algorithm(const cb0r_t element, void *arg) {
     if (element->type != CB0R_MAP) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
@@ -321,7 +337,14 @@ static int cbor_info_decode_algorithm(const cb0r_t element, void *arg) {
     return cbor_iter_map(element, cbor_info_decode_algorithm_entry, arg);
 }
 
-
+/**
+ * @brief Parse an entry of the authenticatorGetInfo CBOR map.
+ * 
+ * @param key The cb0r element representing the map key
+ * @param value The cb0r element representing the map value
+ * @param arg User-passed argument (here: CBOR info).
+ * @return int FIDO_OK if entry could be parsed.
+ */
 static int parse_info_reply_entry(const cb0r_t key, const cb0r_t value, void *arg) {
     if (key->type != CB0R_INT || key->value > UINT8_MAX) {
         // Just ignore the entry according to https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#message-encoding.
@@ -363,6 +386,12 @@ static int parse_info_reply_entry(const cb0r_t key, const cb0r_t value, void *ar
     }
 }
 
+/**
+ * @brief Send a CTAP authenticatorGetInfo command.
+ * 
+ * @param dev The device to communicate to.
+ * @return int FIDO_OK if transmission succeeded.
+ */
 static int fido_dev_get_cbor_info_tx(fido_dev_t *dev) {
     const unsigned char cbor[] = { CTAP_CBOR_GETINFO };
 
@@ -376,6 +405,13 @@ static int fido_dev_get_cbor_info_tx(fido_dev_t *dev) {
     return FIDO_OK;
 }
 
+/**
+ * @brief Receive the response to the CTAP authenticatorGetInfo command and parse it.
+ * 
+ * @param dev The device to communicate to.
+ * @param ci The fido_cbor_info_t to write the parsed reply to.
+ * @return int FIDO_OK if transmission succeeded.
+ */
 static int fido_dev_get_cbor_info_rx(fido_dev_t *dev, fido_cbor_info_t *ci) {
     unsigned char   msg[FIDO_MAXMSG];
     int             msglen;

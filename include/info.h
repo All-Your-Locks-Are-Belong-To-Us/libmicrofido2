@@ -110,4 +110,9 @@ typedef struct fido_cbor_info {
     uint64_t                 maxlargeblob;   /* max largeBlob array length */
 } fido_cbor_info_t;
 
+/**
+ * @brief Resets a CBOR info object.
+ * 
+ * @param ci The info to reset.
+ */
 void fido_cbor_info_reset(fido_cbor_info_t *ci);
