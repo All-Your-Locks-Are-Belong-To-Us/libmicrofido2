@@ -125,17 +125,20 @@ static int largeblob_get_tx(fido_dev_t *dev, size_t offset, size_t count) {
 static int parse_largeblob_reply(const cb0r_t key, const cb0r_t value, void *arg) {
     fido_blob_t *chunk = (fido_blob_t*) arg;
 
+    // Somehow this is always one byte too many
+    uint64_t chunk_len = value->length - 1;
+
     // We are just interested in the config (0x01) parameter.
     // See response in https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#largeBlobsRW
     if (key->type != CB0R_INT || key->value != 0x01) {
         return FIDO_OK;
     } else if (value->type != CB0R_BYTE) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
-    } else if (value->length > chunk->max_length) {
+    } else if (chunk_len > chunk->max_length) {
         return FIDO_ERR_INTERNAL;
     }
-    memcpy(chunk->buffer, value->start + value->header, value->length);
-    chunk->length = value->length;
+    memcpy(chunk->buffer, value->start + value->header, chunk_len);
+    chunk->length = chunk_len;
     return FIDO_OK;
 }
 
