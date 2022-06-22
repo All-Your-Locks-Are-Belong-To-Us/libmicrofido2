@@ -140,8 +140,47 @@ int fido_rx(fido_dev_t *, const uint8_t, void *, const size_t);
 int fido_tx(fido_dev_t *, const uint8_t, const void *, const size_t);
 int fido_get_random(void *, size_t);
 
+/**
+ * @brief Initialize a FIDO device.
+ *
+ * Brings the device structure into a known state, resetting everything.
+ *
+ * @param dev A pointer to the uninitialized FIDO device.
+ */
 void fido_dev_init(fido_dev_t *);
+
+/**
+ * @brief Set the I/O functions for a device.
+ *
+ * @param dev A pointer to the FIDO device to set the I/O functions for.
+ * @param io The I/O functions to set.
+ */
 void fido_dev_set_io(fido_dev_t *, const fido_dev_io_t *);
+
+/**
+ * @brief Set the transport functions for a device.
+ *
+ * @param dev A pointer to the FIDO device to set the transport functions for.
+ * @param transport The transport functions to set.
+ */
 void fido_dev_set_transport(fido_dev_t *, const fido_dev_transport_t *);
+
+/**
+ * @brief Open a FIDO device.
+ *
+ * Initializes the connection and makes it ready to communicate with.
+ *
+ * @param dev A pointer to the FIDO device to be opened.
+ * @return int A FIDO_ERR
+ */
 int fido_dev_open(fido_dev_t *);
+
+/**
+ * @brief Close a FIDO device.
+ * 
+ * Closes the connection to the device.
+ *
+ * @param dev A pointer to the FIDO device to be closed.
+ * @return int A FIDO_ERR
+ */
 int fido_dev_close(fido_dev_t *);

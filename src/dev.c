@@ -12,13 +12,6 @@
 
 static int nonce = 1234; // The only cryptographically secure nonce
 
-/**
- * @brief Initialize a FIDO device.
- *
- * Brings the device structure into a known state, resetting everything.
- *
- * @param dev A pointer to the uninitialized FIDO device.
- */
 void fido_dev_init(fido_dev_t *dev) {
     dev->io.close = NULL;
     dev->io.open = NULL;
@@ -28,23 +21,11 @@ void fido_dev_init(fido_dev_t *dev) {
     dev->nonce = ++nonce;
 }
 
-/**
- * @brief Set the I/O functions for a device.
- *
- * @param dev A pointer to the FIDO device to set the I/O functions for.
- * @param io The I/O functions to set.
- */
 void fido_dev_set_io(fido_dev_t *dev, const fido_dev_io_t *io) {
     dev->io = *io;
     dev->io_handle = NULL;
 }
 
-/**
- * @brief Set the transport functions for a device.
- *
- * @param dev A pointer to the FIDO device to set the transport functions for.
- * @param transport The transport functions to set.
- */
 void fido_dev_set_transport(fido_dev_t *dev, const fido_dev_transport_t *transport) {
     dev->transport = *transport;
 }
@@ -151,14 +132,6 @@ fail:
     return (r);
 }
 
-/**
- * @brief Open a FIDO device.
- *
- * Initializes the connection and makes it ready to communicate with.
- *
- * @param dev A pointer to the FIDO device to be opened.
- * @return int A FIDO_ERR
- */
 int fido_dev_open(fido_dev_t *dev) {
     int r;
 
@@ -172,14 +145,6 @@ int fido_dev_open(fido_dev_t *dev) {
     return FIDO_OK;
 }
 
-/**
- * @brief Close a FIDO device.
- * 
- * Closes the connection to the device.
- *
- * @param dev A pointer to the FIDO device to be closed.
- * @return int A FIDO_ERR
- */
 int fido_dev_close(fido_dev_t * dev) {
     if (dev->io.close == NULL) {
         fido_log_debug("%s: device without close function", __func__);
