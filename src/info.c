@@ -14,51 +14,52 @@
 #include "cb0r.h"
 #include "cbor.h"
 
-#define CBOR_MEMCMP(el, el_start, cmp) (el->length == sizeof(cmp) && !memcmp_progmem(el_start, cmp, sizeof(cmp)))
-#define CBOR_STR_MEMCMP(el, cmp) (CBOR_MEMCMP(el, el->start + el->header, cmp))
+#define CBOR_MEMCMP(el, el_start, cmp, cmp_len) (el->length == cmp_len && !memcmp_progmem(el_start, cmp, cmp_len))
+// Subtract 1 from cmp size to get rid of null byte
+#define CBOR_STR_MEMCMP(el, cmp) (CBOR_MEMCMP(el, el->start + el->header, cmp, sizeof(cmp) - 1))
 
 // versions
-static const char fido_2_1_version[] PROGMEM_MARKER        = {'F', 'I', 'D', 'O', '_', '2', '_', '1'};
-static const char fido_2_0_version[] PROGMEM_MARKER        = {'F', 'I', 'D', 'O', '_', '2', '_', '0'};
-static const char fido_2_1_pre_version[] PROGMEM_MARKER    = {'F', 'I', 'D', 'O', '_', '2', '_', '1', '_', 'P', 'R', 'E'};
-static const char fido_u2f_v2_version[] PROGMEM_MARKER     = {'U', '2', 'F', '_', 'V', '2'};
+static const char fido_2_1_version[] PROGMEM_MARKER        = "FIDO_2_1";
+static const char fido_2_0_version[] PROGMEM_MARKER        = "FIDO_2_0";
+static const char fido_2_1_pre_version[] PROGMEM_MARKER    = "FIDO_2_1_PRE";
+static const char fido_u2f_v2_version[] PROGMEM_MARKER     = "U2F_V2";
 
 // extensions
-static const char fido_extension_cred_blob[] PROGMEM_MARKER       = {'c', 'r', 'e', 'd', 'B', 'l', 'o', 'b'};
-static const char fido_extension_hmac_secret[] PROGMEM_MARKER     = {'h', 'm', 'a', 'c', '-', 's', 'e', 'c', 'r', 'e', 't'};
-static const char fido_extension_cred_protect[] PROGMEM_MARKER    = {'c', 'r', 'e', 'd', 'P', 'r', 'o', 't', 'e', 'c', 't'};
-static const char fido_extension_large_blob_key[] PROGMEM_MARKER  = {'l', 'a', 'r', 'g', 'e', 'B', 'l', 'o', 'b', 'K', 'e', 'y'};
-static const char fido_extension_min_pin_length[] PROGMEM_MARKER  = {'m', 'i', 'n', 'P', 'i', 'n', 'L', 'e', 'n', 'g', 't', 'h'};
+static const char fido_extension_cred_blob[] PROGMEM_MARKER       = "credBlob";
+static const char fido_extension_hmac_secret[] PROGMEM_MARKER     = "hmac-secret";
+static const char fido_extension_cred_protect[] PROGMEM_MARKER    = "credProtect";
+static const char fido_extension_large_blob_key[] PROGMEM_MARKER  = "largeBlobKey";
+static const char fido_extension_min_pin_length[] PROGMEM_MARKER  = "minPinLength";
 
 // options
-static const char fido_option_plat[] PROGMEM_MARKER                                 = {'p', 'l', 'a', 't'};
-static const char fido_option_rk[] PROGMEM_MARKER                                   = {'r', 'k'};
-static const char fido_option_client_pin[] PROGMEM_MARKER                           = {'c', 'l', 'i', 'e', 'n', 't', 'P', 'i', 'n'};
-static const char fido_option_up[] PROGMEM_MARKER                                   = {'u', 'p'};
-static const char fido_option_uv[] PROGMEM_MARKER                                   = {'u', 'v'};
-static const char fido_option_pin_uv_auth_token[] PROGMEM_MARKER                    = {'p', 'i', 'n', 'U', 'v', 'A', 'u', 't', 'h', 'T', 'o', 'k', 'e', 'n'};
-static const char fido_option_no_mc_ga_permissions_with_client_pin[] PROGMEM_MARKER = {'n', 'o', 'M', 'c', 'G', 'a', 'P', 'e', 'r', 'm', 'i', 's', 's', 'i', 'o', 'n', 's', 'W', 'i', 't', 'h', 'C', 'l', 'i', 'e', 'n', 't', 'P', 'i', 'n'};
-static const char fido_option_large_blobs[] PROGMEM_MARKER                          = {'l', 'a', 'r', 'g', 'e', 'B', 'l', 'o', 'b', 's'};
-static const char fido_option_ep[] PROGMEM_MARKER                                   = {'e', 'p'};
-static const char fido_option_bio_enroll[] PROGMEM_MARKER                           = {'b', 'i', 'o', 'E', 'n', 'r', 'o', 'l', 'l'};
-static const char fido_option_user_verification_mgmt_preview[] PROGMEM_MARKER       = {'u', 's', 'e', 'r', 'V', 'e', 'r', 'i', 'f', 'i', 'c', 'a', 't', 'i', 'o', 'n', 'M', 'g', 'm', 't', 'P', 'r', 'e', 'v', 'i', 'e', 'w'};
-static const char fido_option_uv_bio_enroll[] PROGMEM_MARKER                        = {'u', 'v', 'B', 'i', 'o', 'E', 'n', 'r', 'o', 'l', 'l'};
-static const char fido_option_authnr_config[] PROGMEM_MARKER                        = {'a', 'u', 't', 'h', 'n', 'r', 'C', 'f', 'g'};
-static const char fido_option_uv_acfg[] PROGMEM_MARKER                              = {'u', 'v', 'A', 'c', 'f', 'g'};
-static const char fido_option_cred_mgmt[] PROGMEM_MARKER                            = {'c', 'r', 'e', 'd', 'M', 'g', 'm', 't'};
-static const char fido_option_credential_management_preview[] PROGMEM_MARKER        = {'c', 'r', 'e', 'd', 'e', 'n', 't', 'i', 'a', 'l', 'M', 'g', 'm', 't', 'P', 'r', 'e', 'v', 'i', 'e', 'w'};
-static const char fido_option_set_min_pin_length[] PROGMEM_MARKER                   = {'s', 'e', 't', 'M', 'i', 'n', 'P', 'I', 'N', 'L', 'e', 'n', 'g', 't', 'h'};
-static const char fido_option_make_cred_uv_not_rqd[] PROGMEM_MARKER                 = {'m', 'a', 'k', 'e', 'C', 'r', 'e', 'd', 'U', 'v', 'N', 'o', 't', 'R', 'q', 'd'};
-static const char fido_option_always_uv[] PROGMEM_MARKER                            = {'a', 'l', 'w', 'a', 'y', 's', 'U', 'v'};
+static const char fido_option_plat[] PROGMEM_MARKER                                 = "plat";
+static const char fido_option_rk[] PROGMEM_MARKER                                   = "rk";
+static const char fido_option_client_pin[] PROGMEM_MARKER                           = "clientPin";
+static const char fido_option_up[] PROGMEM_MARKER                                   = "up";
+static const char fido_option_uv[] PROGMEM_MARKER                                   = "uv";
+static const char fido_option_pin_uv_auth_token[] PROGMEM_MARKER                    = "pinUvAuthToken";
+static const char fido_option_no_mc_ga_permissions_with_client_pin[] PROGMEM_MARKER = "noMcGaPermissionsWithClientPin";
+static const char fido_option_large_blobs[] PROGMEM_MARKER                          = "largeBlobs";
+static const char fido_option_ep[] PROGMEM_MARKER                                   = "ep";
+static const char fido_option_bio_enroll[] PROGMEM_MARKER                           = "bioEnroll";
+static const char fido_option_user_verification_mgmt_preview[] PROGMEM_MARKER       = "userVerificationMgmtPreview";
+static const char fido_option_uv_bio_enroll[] PROGMEM_MARKER                        = "uvBioEnroll";
+static const char fido_option_authnr_config[] PROGMEM_MARKER                        = "authnrCfg";
+static const char fido_option_uv_acfg[] PROGMEM_MARKER                              = "uvAcfg";
+static const char fido_option_cred_mgmt[] PROGMEM_MARKER                            = "credMgmt";
+static const char fido_option_credential_management_preview[] PROGMEM_MARKER        = "credentialMgmtPreview";
+static const char fido_option_set_min_pin_length[] PROGMEM_MARKER                   = "setMinPINLength";
+static const char fido_option_make_cred_uv_not_rqd[] PROGMEM_MARKER                 = "makeCredUvNotRqd";
+static const char fido_option_always_uv[] PROGMEM_MARKER                            = "alwaysUv";
 
 // transports
-static const char fido_transport_nfc[] PROGMEM_MARKER       = {'n', 'f', 'c'};
-static const char fido_transport_usb[] PROGMEM_MARKER       = {'u', 's', 'b'};
-static const char fido_transport_ble[] PROGMEM_MARKER       = {'b', 'l', 'e'};
-static const char fido_transport_internal[] PROGMEM_MARKER  = {'i', 'n', 't', 'e', 'r', 'n', 'a', 'l'};
+static const char fido_transport_nfc[] PROGMEM_MARKER       = "nfc";
+static const char fido_transport_usb[] PROGMEM_MARKER       = "usb";
+static const char fido_transport_ble[] PROGMEM_MARKER       = "ble";
+static const char fido_transport_internal[] PROGMEM_MARKER  = "internal";
 
 // algorithm
-static const char fido_algorithm_key[] PROGMEM_MARKER  = {'a', 'l', 'g'};
+static const char fido_algorithm_key[] PROGMEM_MARKER  = "alg";
 
 /**
  * @brief Resets a CBOR info object.
