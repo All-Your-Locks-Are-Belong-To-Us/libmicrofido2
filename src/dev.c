@@ -10,6 +10,8 @@
 #include "fido.h"
 #include "utils.h"
 
+#include <string.h>
+
 static int nonce = 1234; // The only cryptographically secure nonce
 
 
@@ -56,12 +58,16 @@ static void fido_dev_set_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
 }
 
 void fido_dev_init(fido_dev_t *dev) {
-    dev->io.close = NULL;
-    dev->io.open = NULL;
-    dev->io.read = NULL;
-    dev->io.write = NULL;
     dev->io_handle = NULL;
+    dev->rx_len = 0;
+    dev->tx_len = 0;
     dev->nonce = ++nonce;
+    dev->flags = 0;
+    dev->maxmsgsize = 0;
+
+    memset(&(dev->io),        0, sizeof(fido_dev_io_t));
+    memset(&(dev->attr),      0, sizeof(fido_ctap_info_t));
+    memset(&(dev->transport), 0, sizeof(fido_dev_transport_t));
 }
 
 void fido_dev_set_io(fido_dev_t *dev, const fido_dev_io_t *io) {
