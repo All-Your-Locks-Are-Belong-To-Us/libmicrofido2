@@ -1,0 +1,6 @@
+[submodule "external/cb0r"]
+	path = external/cb0r
+	url = git@github.com:All-Your-Locks-Are-Belong-To-Us/cb0r.git
+[submodule "external/aes_gcm"]
+	path = external/aes_gcm
+	url = git@github.com:All-Your-Locks-Are-Belong-To-Us/aes_gcm.git
