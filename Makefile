@@ -56,7 +56,7 @@ EXTERNAL_BUILDDIRS = $(addprefix $(BUILDDIR)/, $(EXTERNAL_DIRS))
 EXTERNAL_INCLUDEDIRS = $(addsuffix /include, $(EXTERNAL_DIRS))
 EXTERNAL_SOURCEDIRS = $(addsuffix /src, $(EXTERNAL_DIRS))
 EXTERNAL_SOURCES := $(foreach srcdir, $(EXTERNAL_SOURCEDIRS), $(wildcard $(srcdir)/*.c))
-EXTERNAL_OBJECTS := $(BUILDDIR)/$(subst src/,,$(EXTERNAL_SOURCES:.c=.o))
+EXTERNAL_OBJECTS := $(subst src/,,$(patsubst %.c,$(BUILDDIR)/%.o,$(EXTERNAL_SOURCES)))
 
 DEPS := $(OBJECTS:.o=.d) $(EXTERNAL_OBJECTS:.o=.d)
 
