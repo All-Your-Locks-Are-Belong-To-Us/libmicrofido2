@@ -13,6 +13,8 @@
 #include "error.h"
 #include "cbor.h"
 #include "dev.h"
+#include <stdint.h>
+#include <string.h>
 
 #define LARGEBLOB_DIGEST_LENGTH	16
 #define LARGEBLOB_NONCE_LENGTH	12
@@ -245,5 +247,160 @@ int fido_dev_largeblob_get_array(fido_dev_t *dev, fido_blob_t *largeblob_array) 
         memcpy(largeblob_array->buffer, fido_largeblob_initial_array, sizeof(fido_largeblob_initial_array));
         largeblob_array->length = sizeof(fido_largeblob_initial_array);
     }
+    return FIDO_OK;
+}
+
+typedef struct largeblob_array_lookup_param {
+    fido_blob_t *result;
+    uint8_t *key;
+    bool success;
+} largeblob_array_lookup_param_t;
+
+typedef struct largeblob_array_entry {
+    uint8_t *ciphertext;
+    size_t ciphertext_len;
+    uint8_t *nonce; // 12 bytes
+    uint8_t associated_data[LARGEBLOB_ASSOCIATED_DATA_SIZE];
+    uint8_t *tag; // 16 bytes
+    uint64_t origSize;
+} largeblob_array_entry_t;
+
+static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compressed_len, size_t uncompressed_len) {
+    if(out->max_length < uncompressed_len) {
+        return FIDO_ERR_INVALID_ARGUMENT;
+    }
+    // TODO INFLATE
+    memcpy(out->buffer, compressed, compressed_len);
+    out->length = compressed_len;
+    return FIDO_OK;
+}
+
+static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
+    largeblob_array_entry_t *entry = (largeblob_array_entry_t*) data;
+
+    if (key->type != CB0R_INT) {
+        fido_log_debug("%s: cbor type", __func__);
+        return FIDO_OK; // ignore
+    }
+
+    switch (key->value) {
+    case 1: // ciphertext (+tag)
+        if(cbor_bytestring_is_definite(value)) {
+            return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        }
+        if(value->length < AES_GCM_TAG_SIZE) {
+            return FIDO_ERR_INVALID_ARGUMENT;
+        }
+        entry->ciphertext = value->start + value->header;
+        entry->ciphertext_len = value->length - AES_GCM_TAG_SIZE;
+        entry->tag = entry->ciphertext + entry->ciphertext_len;
+        return FIDO_OK;
+    case 2: // nonce
+        if(cbor_bytestring_is_definite(value)) {
+            return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        }
+        if(value->length != LARGEBLOB_NONCE_SIZE) {
+            return FIDO_ERR_INVALID_ARGUMENT;
+        }
+        entry->nonce = value->start + value->header;
+        return FIDO_OK;
+    case 3: // origSize
+        if (value->type != CB0R_INT || value->value > SIZE_MAX) {
+            return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        }
+        entry->origSize = (size_t)value->value;
+        entry->associated_data[0] = 'b';
+        entry->associated_data[1] = 'l';
+        entry->associated_data[2] = 'o';
+        entry->associated_data[3] = 'b';
+        uint64_t little_endian_orig_size = htole64(entry->origSize);
+        memcpy(entry->associated_data + 4, &little_endian_orig_size, sizeof(uint64_t));
+
+        return FIDO_OK;
+    default: // ignore
+        fido_log_debug("%s: cbor type", __func__);
+        return FIDO_OK;
+    }
+}
+
+static int largeblob_array_lookup(cb0r_t value, void* data) {
+    largeblob_array_lookup_param_t *param = (largeblob_array_lookup_param_t*) data;
+    largeblob_array_entry_t entry;
+
+    if(param->success) {
+        // There already was a successful decryption.
+        return FIDO_OK;
+    }
+
+    cb0r_s map;
+    if (!cb0r_read(value->start + value->header, value->length, &map) || map.type != CB0R_MAP) {
+        return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+    }
+
+    int r;
+    if((r = cbor_iter_map(&map, largeblob_parse_array_entry, (void*) &entry)) != FIDO_OK) {
+        return r;
+    }
+
+    if(aes_gcm_ad(param->key, LARGEBLOB_KEY_SIZE,
+        entry.nonce, LARGEBLOB_NONCE_LENGTH,
+        entry.ciphertext, entry.ciphertext_len,
+        entry.associated_data, sizeof(entry.associated_data),
+        entry.tag,
+        entry.ciphertext /* Decrypt in-place */) != 0) {
+            // Decryption failed. Ignore this entry.
+            return FIDO_OK;
+        }
+
+    if((r = fido_uncompress(param->result, entry.ciphertext, entry.ciphertext_len, entry.origSize)) != FIDO_OK) {
+        // Decompression failed. Ignore this entry.
+        return FIDO_OK;
+    }
+    param->success = true;
+
+    return FIDO_OK;
+}
+
+int fido_dev_largeblob_get(fido_dev_t *dev, uint8_t *key, size_t key_len, fido_blob_t *blob) {
+    fido_blob_t largeblob_array;
+    uint8_t largeblob_array_buffer[dev->maxlargeblob];
+
+    if (key_len != LARGEBLOB_KEY_SIZE) {
+        fido_log_debug("%s: invalid key len %zu", __func__, key_len);
+        return FIDO_ERR_INVALID_ARGUMENT;
+    }
+
+    if (blob == NULL) {
+        fido_log_debug("%s: invalid blob_ptr=%p, blob_len=%p", __func__,
+            (const void *)blob_ptr, (const void *)blob_len);
+        return FIDO_ERR_INVALID_ARGUMENT;
+    }
+
+    fido_blob_reset(&largeblob_array, largeblob_array_buffer, sizeof(largeblob_array_buffer));
+
+    int r;
+    if ((r = fido_dev_largeblob_get_array(dev, &largeblob_array)) != FIDO_OK) {
+        fido_log_debug("%s: largeblob_get_array", __func__);
+        return r;
+    }
+
+    cb0r_s array;
+    if (!cb0r_read(largeblob_array.buffer, largeblob_array.length, &array) || array.type != CB0R_ARRAY) {
+        return  FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+    }
+
+    largeblob_array_lookup_param_t param = {
+        .result = blob,
+        .key = key,
+        .success = false,
+    };
+
+    if ((r = cbor_iter_array(&array, largeblob_array_lookup, &param)) != FIDO_OK) {
+        return r;
+    }
+    if (!param.success) {
+        return FIDO_ERR_NOTFOUND;
+    }
+
     return FIDO_OK;
 }

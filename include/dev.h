@@ -37,15 +37,16 @@ typedef struct __attribute__((packed)) fido_ctap_info {
 } fido_ctap_info_t;
 
 typedef struct fido_dev {
-    fido_dev_io_t           io;         // I/O functions (raw)
-    void                    *io_handle; // I/O handle
-    fido_dev_transport_t    transport;  // transport functions
-    size_t                  rx_len;     // length of HID input reports
-    size_t                  tx_len;     // length of HID output reports
-    uint64_t                nonce;      // nonce used for this device
-    fido_ctap_info_t        attr;       // device attributes
-    fido_dev_flag_t         flags;      // flags for the device (indicating special capabilities)
-    uint64_t                maxmsgsize; // maximum message size
+    fido_dev_io_t           io;           // I/O functions (raw)
+    void                    *io_handle;   // I/O handle
+    fido_dev_transport_t    transport;    // transport functions
+    size_t                  rx_len;       // length of HID input reports
+    size_t                  tx_len;       // length of HID output reports
+    uint64_t                nonce;        // nonce used for this device
+    fido_ctap_info_t        attr;         // device attributes
+    fido_dev_flag_t         flags;        // flags for the device (indicating special capabilities)
+    uint64_t                maxmsgsize;   // maximum message size
+    uint64_t                maxlargeblob; // maximum size of the serialized large-blob array
 } fido_dev_t;
 
 /**
