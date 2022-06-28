@@ -18,7 +18,7 @@ AR := $(TOOLCHAIN_ROOT)/bin/avr-ar
 CPU := atmega1284p
 
 EXTERNAL_LIBS :=
-EXTERNALS := cb0r aes_gcm
+EXTERNALS := cb0r aes_gcm crypto-algorithms
 
 COMMONFLAGS := -Werror=shadow -mmcu=$(CPU)
 LIBRARY_PREPROCESSOR_MACROS :=

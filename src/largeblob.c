@@ -13,13 +13,15 @@
 #include "error.h"
 #include "cbor.h"
 #include "dev.h"
+#include "sha256.h"
 #include <stdint.h>
 #include <string.h>
 
-#define LARGEBLOB_DIGEST_LENGTH	16
-#define LARGEBLOB_NONCE_LENGTH	12
-#define LARGEBLOB_TAG_LENGTH	16
-#define SHA256_DIGEST_LENGTH    32 // TODO move
+#define LARGEBLOB_DIGEST_LENGTH             16
+#define LARGEBLOB_NONCE_LENGTH              12
+#define LARGEBLOB_TAG_LENGTH                16
+#define LARGEBLOB_DIGEST_SIZE               SHA256_BLOCK_SIZE
+#define LARGEBLOB_DIGEST_COMPARISON_SIZE    16
 
 // Empty CBOR array (80) followed by LEFT(SHA-256(h'80'), 16)
 static const uint8_t fido_largeblob_initial_array[] PROGMEM_MARKER = {0x80, 0x76, 0xbe, 0x8b, 0x52, 0x8d, 0x00, 0x75, 0xf7, 0xaa, 0xe9, 0x8d, 0x6f, 0xa5, 0x7a, 0x6d, 0x3c};
@@ -88,17 +90,13 @@ static size_t build_largeblob_get_cbor(size_t offset, size_t count, uint8_t *buf
 * @param data The length of the largeblob array buffer.
  * @return bool True if the given largeblob array digest matches the calculated digest.
  */
-static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_LENGTH], const uint8_t *data, size_t len) {
-    uint8_t digest[SHA256_DIGEST_LENGTH];
+static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_SIZE], const uint8_t *data, size_t len) {
+    uint8_t digest[SHA256_DIGEST_SIZE];
 
     if (data == NULL || len == 0) {
         return false;
     }
-    // TODO Use SHA256.
-    // if (SHA256(data, len, digest) != digest)
-    //    return false;
-    //}
-    memcpy(out, digest, LARGEBLOB_DIGEST_LENGTH);
+    sha256(data, len, out);
     return true;
 }
 
@@ -109,7 +107,7 @@ static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_LENGTH], const u
  * @return bool true, if the length has been set correct and the digest matches.
  */
 static bool largeblob_array_check(fido_blob_t *array) {
-    uint8_t expected_hash[LARGEBLOB_DIGEST_LENGTH];
+    uint8_t expected_hash[LARGEBLOB_DIGEST_SIZE];
 
     fido_log_xxd(array->buffer, array->length, __func__);
     if (array->length < sizeof(expected_hash)) {
@@ -117,15 +115,13 @@ static bool largeblob_array_check(fido_blob_t *array) {
       return false;
     }
 
-    size_t body_len = array->length - sizeof(expected_hash);
+    size_t body_len = array->length - LARGEBLOB_DIGEST_COMPARISON_SIZE;
     if (!largeblob_array_digest(expected_hash, array->buffer, body_len)) {
       fido_log_debug("%s: largeblob_array_digest", __func__);
       return false;
     }
 
-    // TODO Use timing safe compare.
-    // return memcmp(expected_hash, array->buffer + body_len, sizeof(expected_hash)) == 0;
-    return true;
+    return memcmp(expected_hash, array->buffer + body_len, LARGEBLOB_DIGEST_COMPARISON_SIZE) == 0;
 }
 
 /**
