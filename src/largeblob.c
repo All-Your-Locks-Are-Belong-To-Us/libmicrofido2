@@ -13,7 +13,8 @@
 #include "error.h"
 #include "cbor.h"
 #include "dev.h"
-#include "sha256.h"
+#include <aes_gcm.h>
+#include <sha256.h>
 #include <stdint.h>
 #include <string.h>
 

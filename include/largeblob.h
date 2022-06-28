@@ -12,10 +12,9 @@
 #include "dev.h"
 #include <stdint.h>
 #include <stddef.h>
-#include "aes_gcm.h"
 
-#define LARGEBLOB_KEY_SIZE AES_256_KEY_SIZE
-#define LARGEBLOB_NONCE_SIZE (12)
+#define LARGEBLOB_KEY_SIZE             (32)
+#define LARGEBLOB_NONCE_SIZE           (12)
 #define LARGEBLOB_ASSOCIATED_DATA_SIZE (12) // "blob" + 8 byte origSize
 
 typedef struct fido_blob {
