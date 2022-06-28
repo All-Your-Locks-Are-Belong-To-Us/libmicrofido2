@@ -4,3 +4,6 @@
 [submodule "external/aes_gcm"]
 	path = external/aes_gcm
 	url = git@github.com:All-Your-Locks-Are-Belong-To-Us/aes_gcm.git
+[submodule "external/tinf"]
+	path = external/tinf
+	url = git@github.com:All-Your-Locks-Are-Belong-To-Us/tinf.git
