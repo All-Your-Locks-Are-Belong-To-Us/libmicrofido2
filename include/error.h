@@ -71,3 +71,4 @@
 #define FIDO_ERR_INTERNAL               -9
 #define FIDO_ERR_NOTFOUND               -10
 #define FIDO_ERR_COMPRESS               -11
+#define FIDO_ERR_DECOMPRESS             -12

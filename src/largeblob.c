@@ -15,6 +15,7 @@
 #include "dev.h"
 #include <aes_gcm.h>
 #include <sha256.h>
+#include <tinf.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -262,13 +263,16 @@ typedef struct largeblob_array_entry {
     uint64_t origSize;
 } largeblob_array_entry_t;
 
-static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compressed_len, size_t uncompressed_len) {
-    if(out->max_length < uncompressed_len) {
+static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compressed_len, size_t uncompressed_len_expected) {
+    uint32_t uncompressed_len_actual;
+    if(out->max_length < uncompressed_len_expected) {
         return FIDO_ERR_INVALID_ARGUMENT;
     }
-    // TODO INFLATE
-    memcpy(out->buffer, compressed, compressed_len);
-    out->length = compressed_len;
+    if(tinf_uncompress(out->buffer, &uncompressed_len_actual, compressed, compressed_len) != TINF_OK ||
+       uncompressed_len_actual != uncompressed_len_expected) {
+        return FIDO_ERR_DECOMPRESS;
+    }
+    out->length = uncompressed_len_actual;
     return FIDO_OK;
 }
 
