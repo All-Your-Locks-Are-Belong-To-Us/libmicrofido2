@@ -163,8 +163,7 @@ static int largeblob_get_tx(fido_dev_t *dev, size_t offset, size_t count) {
 static int parse_largeblob_reply(const cb0r_t key, const cb0r_t value, void *arg) {
     fido_blob_t *chunk = (fido_blob_t*) arg;
 
-    // Somehow this is always one byte too many
-    uint64_t chunk_len = value->length - 1;
+    uint64_t chunk_len = value->end - value->start - value->header;
 
     // We are just interested in the config (0x01) parameter.
     // See response in https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#largeBlobsRW
@@ -286,18 +285,18 @@ static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
 
     switch (key->value) {
     case 1: // ciphertext (+tag)
-        if(cbor_bytestring_is_definite(value)) {
+        if(!cbor_bytestring_is_definite(value)) {
             return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
         }
         if(value->length < AES_GCM_TAG_SIZE) {
             return FIDO_ERR_INVALID_ARGUMENT;
         }
         entry->ciphertext = value->start + value->header;
-        entry->ciphertext_len = value->length - AES_GCM_TAG_SIZE;
+        entry->ciphertext_len = value->end - value->start - value->header - AES_GCM_TAG_SIZE;
         entry->tag = entry->ciphertext + entry->ciphertext_len;
         return FIDO_OK;
     case 2: // nonce
-        if(cbor_bytestring_is_definite(value)) {
+        if(!cbor_bytestring_is_definite(value)) {
             return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
         }
         if(value->length != LARGEBLOB_NONCE_SIZE) {
@@ -334,7 +333,7 @@ static int largeblob_array_lookup(cb0r_t value, void* data) {
     }
 
     cb0r_s map;
-    if (!cb0r_read(value->start + value->header, value->length, &map) || map.type != CB0R_MAP) {
+    if (!cb0r_read(value->start, value->end - value->start, &map) || map.type != CB0R_MAP) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
