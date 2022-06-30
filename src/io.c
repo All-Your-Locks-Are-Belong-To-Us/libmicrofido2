@@ -32,6 +32,7 @@ int fido_rx(fido_dev_t *d, const uint8_t cmd, void *buf, const size_t len) {
         return (FIDO_ERR_INVALID_ARGUMENT);
     }
 
+    // Values below 0 are errors.
     if ((n = d->transport.rx(d, cmd, buf, len)) >= 0)
         fido_log_xxd(buf, (size_t)n, "%s", __func__);
 

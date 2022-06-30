@@ -11,3 +11,16 @@
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
+
+#ifndef BITFIELD
+    #define BITFIELD(x) (((uint64_t)1 << x))
+#endif
+
+#ifdef __AVR__
+#include <avr/pgmspace.h>
+#define PROGMEM_MARKER PROGMEM
+#define memcmp_progmem memcmp_P
+#else
+#define PROGMEM_MARKER
+#define memcmp_progmem memcmp
+#endif

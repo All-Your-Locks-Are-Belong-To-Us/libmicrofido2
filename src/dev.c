@@ -12,6 +12,49 @@
 
 static int nonce = 1234; // The only cryptographically secure nonce
 
+
+static void fido_dev_set_extension_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
+    if (info->extensions & FIDO_EXTENSION_CRED_PROTECT) {
+        dev->flags |= FIDO_DEV_CRED_PROT;
+    }
+    if (info->extensions & FIDO_EXTENSION_LARGE_BLOB_KEY) {
+        dev->flags |= FIDO_DEV_LARGE_BLOB_KEY;
+    }
+}
+
+static void fido_dev_set_option_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
+    if(info->options & FIDO_OPTION_CLIENT_PIN) {
+        dev->flags |= FIDO_DEV_PIN_SET;
+    }
+    if(info->options & FIDO_OPTION_CRED_MGMT || info->options & FIDO_OPTION_CREDENTIAL_MANAGEMENT_PREVIEW) {
+        dev->flags |= FIDO_DEV_CREDMAN;
+    }
+    if(info->options & FIDO_OPTION_UV) {
+        dev->flags |= FIDO_DEV_UV_SET;
+    }
+    if(info->options & FIDO_OPTION_PIN_UV_AUTH_TOKEN) {
+        dev->flags |= FIDO_DEV_TOKEN_PERMS;
+    }
+    if(info->options & FIDO_OPTION_LARGE_BLOBS) {
+        dev->flags |= FIDO_DEV_LARGE_BLOB;
+    }
+}
+
+static void fido_dev_set_protocol_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
+    if(info->protocols & FIDO_PIN_PROTOCOL_1){
+        dev->flags |= FIDO_DEV_PIN_PROTOCOL_1;
+    }
+    if(info->protocols & FIDO_PIN_PROTOCOL_2){
+        dev->flags |= FIDO_DEV_PIN_PROTOCOL_2;
+    }
+}
+
+static void fido_dev_set_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
+    fido_dev_set_extension_flags(dev, info);
+    fido_dev_set_option_flags(dev, info);
+    fido_dev_set_protocol_flags(dev, info);
+}
+
 void fido_dev_init(fido_dev_t *dev) {
     dev->io.close = NULL;
     dev->io.open = NULL;
@@ -28,6 +71,11 @@ void fido_dev_set_io(fido_dev_t *dev, const fido_dev_io_t *io) {
 
 void fido_dev_set_transport(fido_dev_t *dev, const fido_dev_transport_t *transport) {
     dev->transport = *transport;
+}
+
+bool fido_dev_is_fido(fido_dev_t *dev) {
+    // TODO: Check whether this is standard conform.
+    return dev->attr.flags & FIDO_CAP_CBOR;
 }
 
 /**
@@ -75,7 +123,7 @@ fail:
 }
 
 static int fido_dev_open_rx(fido_dev_t *dev) {
-    // fido_cbor_info_t    *info = NULL;
+    fido_cbor_info_t    info = { 0 };
     int                 reply_len;
     int                 r;
 
@@ -93,43 +141,31 @@ static int fido_dev_open_rx(fido_dev_t *dev) {
         goto fail;
     }
 
-    /*
-    // TODO: later
-    if (fido_dev_is_fido2(dev)) {
-        if ((info = fido_cbor_info_new()) == NULL) {
-            fido_log_debug("%s: fido_cbor_info_new", __func__);
-            r = FIDO_ERR_INTERNAL;
+    if (fido_dev_is_fido(dev)) {
+        fido_cbor_info_reset(&info);
+        if ((r = fido_dev_get_cbor_info_wait(dev, &info)) != FIDO_OK) {
+            fido_log_debug("%s: fido_dev_cbor_info_wait: %d", __func__, r);
+            // This device does not support FIDO2, error out.
             goto fail;
-        }
-        if ((r = fido_dev_get_cbor_info_wait(dev, info)) != FIDO_OK) {
-            fido_log_debug("%s: fido_dev_cbor_info_wait: %d",
-                __func__, r);
-            if (disable_u2f_fallback)
-                goto fail;
-            fido_log_debug("%s: falling back to u2f", __func__);
-            fido_dev_force_u2f(dev);
         } else {
-            fido_dev_set_flags(dev, info);
+            fido_dev_set_flags(dev, &info);
         }
     }
 
-    if (fido_dev_is_fido2(dev) && info != NULL) {
-        dev->maxmsgsize = fido_cbor_info_maxmsgsiz(info);
-        fido_log_debug("%s: FIDO_MAXMSG=%d, maxmsgsiz=%lu", __func__,
+    if (fido_dev_is_fido(dev)) {
+        dev->maxmsgsize = info.maxmsgsize;
+        fido_log_debug("%s: FIDO_MAXMSG=%d, maxmsgsize=%lu", __func__,
             FIDO_MAXMSG, (unsigned long)dev->maxmsgsize);
     }
-    */
 
     r = FIDO_OK;
 fail:
-    // fido_cbor_info_free(&info);
-
     if (r != FIDO_OK) {
         dev->io.close(dev->io_handle);
         dev->io_handle = NULL;
     }
 
-    return (r);
+    return r;
 }
 
 int fido_dev_open(fido_dev_t *dev) {

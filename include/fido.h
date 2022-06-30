@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "array.h"
 #include "dev.h"
 #include "error.h"
 
@@ -21,3 +20,4 @@
 #include "io.h"
 #include "nfc.h"
 #include "param.h"
+#include "info.h"
