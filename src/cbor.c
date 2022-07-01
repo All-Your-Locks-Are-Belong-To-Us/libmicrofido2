@@ -61,3 +61,104 @@ bool cbor_bytestring_is_definite(const cb0r_t val) {
     return val->type == CB0R_BYTE &&
         val->count != CB0R_STREAM;
 }
+
+/**
+ * @brief Returns the length in bytes when encoding the value for CBOR.
+ * Essentially, all values greater than 23 are encoded with 1 byte more than
+ * what would usually be necessary, to accomodate additional metadata.
+ * See https://datatracker.ietf.org/doc/html/rfc7049#section-2.1
+ *
+ * @param value The value to encode.
+ */
+static size_t cbor_encoded_len(uint64_t value) {
+    if(value <= 23) {
+        return 1;
+    } else if(value <= UINT8_MAX) {
+        return 2;
+    } else if(value <= UINT16_MAX) {
+        return 3;
+    } else if(value <= UINT32_MAX) {
+        return 5;
+    } else {
+        return 9;
+    }
+}
+
+void cbor_writer_reset(cbor_writer_t writer, uint8_t* buffer, size_t buffer_len) {
+    writer->buffer = buffer;
+    writer->buffer_len = buffer_len;
+    writer->writing_position = buffer;
+    writer->length = 0;
+    writer->status = CBOR_WRITER_OK;
+}
+
+bool cbor_writer_is_ok(cbor_writer_t writer) {
+    return writer->status == CBOR_WRITER_OK;
+}
+
+static bool cbor_writer_can_advance(cbor_writer_t writer, size_t count) {
+    if(count > writer->buffer_len - writer->length || writer->status != CBOR_WRITER_OK) {
+        return false;
+    }
+    return true;
+}
+
+static void cbor_writer_advance(cbor_writer_t writer, size_t count) {
+    if(cbor_writer_can_advance(writer, count)) {
+        writer->length += count;
+        writer->writing_position = writer->buffer + writer->length;
+    } else {
+        writer->status = CBOR_WRITER_BUFFER_TOO_SHORT;
+    }
+}
+
+static size_t cbor_write(cbor_writer_t writer, cb0r_e type, uint64_t value) {
+    size_t encoded_len = cbor_encoded_len(value);
+    if(!cbor_writer_can_advance(writer, encoded_len)) {
+        writer->status = CBOR_WRITER_BUFFER_TOO_SHORT;
+        return 0;
+    }
+    encoded_len = cb0r_write(writer->writing_position, type, value);
+    cbor_writer_advance(writer, encoded_len);
+    return encoded_len;
+}
+
+size_t cbor_encode_uint(cbor_writer_t writer, uint64_t value) {
+    return cbor_write(writer, CB0R_INT, value);
+}
+
+size_t cbor_encode_negint(cbor_writer_t writer, uint64_t value) {
+    return cbor_write(writer, CB0R_NEG, value);
+};
+
+size_t cbor_encode_bytestring(cbor_writer_t writer, uint8_t* string, size_t string_len) {
+    size_t header_len = cbor_write(writer, CB0R_BYTE, string_len);
+    if(cbor_writer_can_advance(writer, string_len)) {
+        memcpy(writer->writing_position, string, string_len);
+        cbor_writer_advance(writer, string_len);
+        return header_len + string_len;
+    }
+    return header_len;
+}
+
+size_t cbor_encode_string(cbor_writer_t writer, uint8_t* string, size_t string_len) {
+    size_t header_len = cbor_write(writer, CB0R_UTF8, string_len);
+    if(cbor_writer_can_advance(writer, string_len)) {
+        memcpy(writer->writing_position, string, string_len);
+        cbor_writer_advance(writer, string_len);
+        return header_len + string_len;
+    }
+    return header_len;
+}
+
+size_t cbor_encode_array_start(cbor_writer_t writer, uint64_t len) {
+    return cbor_write(writer, CB0R_ARRAY, len);
+}
+
+size_t cbor_encode_map_start(cbor_writer_t writer, uint64_t len) {
+    return cbor_write(writer, CB0R_MAP, len);
+}
+
+size_t cbor_encode_boolean(cbor_writer_t writer, bool value) {
+    return cbor_write(writer, value ? CB0R_TRUE : CB0R_FALSE, 0);
+}
