@@ -251,6 +251,7 @@ static const fido_dev_transport_t nfc_transport = {
 };
 
 int fido_init_nfc_device(fido_dev_t *dev, const fido_dev_io_t *io) {
+    fido_dev_init(dev);
     if (dev->io_handle != NULL) {
         fido_log_debug("%s: invalid argument, device already open", __func__);
         return FIDO_ERR_INVALID_ARGUMENT;

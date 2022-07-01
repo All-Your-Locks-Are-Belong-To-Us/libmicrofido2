@@ -16,6 +16,12 @@
     #define BITFIELD(x) (((uint64_t)1 << x))
 #endif
 
+#if defined(__AVR__)
+    #define htole64(x) x
+#else
+    #error Unsupported architecture
+#endif
+
 #ifdef __AVR__
 #include <avr/pgmspace.h>
 #define PROGMEM_MARKER PROGMEM

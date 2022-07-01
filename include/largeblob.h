@@ -13,6 +13,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define LARGEBLOB_KEY_SIZE             32
+#define LARGEBLOB_NONCE_SIZE           12
+#define LARGEBLOB_ASSOCIATED_DATA_SIZE 12 // "blob" + 8 byte origSize
+
 typedef struct fido_blob {
     uint8_t *buffer;
     size_t max_length;
@@ -36,3 +40,14 @@ void fido_blob_reset(fido_blob_t *blob, uint8_t *buffer, size_t buffer_len);
  * @return success or failure
  */
 int fido_dev_largeblob_get_array(fido_dev_t *dev, fido_blob_t *largeblob_array);
+
+/**
+ * @brief Get the blob that was encrypted with key.
+ *
+ * @param dev The device to read from.
+ * @param key The AES key to use for decryption.
+ * @param key_len The length of the AES key. Must be 32 byte.
+ * @param blob The blob to load the data into.
+ * @return success or failure
+ */
+int fido_dev_largeblob_get(fido_dev_t *dev, uint8_t *key, size_t key_len, fido_blob_t *blob);

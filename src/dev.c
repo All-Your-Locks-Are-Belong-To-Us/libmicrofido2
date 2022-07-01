@@ -63,6 +63,7 @@ void fido_dev_init(fido_dev_t *dev) {
     dev->nonce = ++nonce;
     dev->flags = 0;
     dev->maxmsgsize = FIDO_MAXMSG;
+    dev->maxlargeblob = 0;
 
     memset(&(dev->io),        0, sizeof(fido_dev_io_t));
     memset(&(dev->attr),      0, sizeof(fido_ctap_info_t));
@@ -154,13 +155,11 @@ static int fido_dev_open_rx(fido_dev_t *dev) {
             goto fail;
         } else {
             fido_dev_set_flags(dev, &info);
+            dev->maxmsgsize = info.maxmsgsize < FIDO_MAXMSG ? info.maxmsgsize : FIDO_MAXMSG;
+            fido_log_debug("%s: FIDO_MAXMSG=%d, maxmsgsize=%lu", __func__,
+                FIDO_MAXMSG, (unsigned long)dev->maxmsgsize);
+            dev->maxlargeblob = info.maxlargeblob;
         }
-    }
-
-    if (fido_dev_is_fido(dev)) {
-        dev->maxmsgsize = info.maxmsgsize < FIDO_MAXMSG ? info.maxmsgsize : FIDO_MAXMSG;
-        fido_log_debug("%s: FIDO_MAXMSG=%d, maxmsgsize=%lu", __func__,
-            FIDO_MAXMSG, (unsigned long)dev->maxmsgsize);
     }
 
     r = FIDO_OK;
