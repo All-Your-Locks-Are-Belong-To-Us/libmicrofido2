@@ -9,3 +9,6 @@ This library uses code from:
 
 - [`cb0r`](https://github.com/quartzjer/cb0r), licensed under the Unlicense.
 - [`libfido2`](https://github.com/Yubico/libfido2), licensed under the BSD-2-Clause license.
+- [`aes-gcm`](https://github.com/anibali/aes_gcm), licensed under BSD license.
+- [`tinf`](https://github.com/jibsen/tinf), licensed under zlib license.
+- [`crypto-algorithms`](https://github.com/B-Con/crypto-algorithms), public domain.
