@@ -13,9 +13,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define LARGEBLOB_KEY_SIZE             (32)
-#define LARGEBLOB_NONCE_SIZE           (12)
-#define LARGEBLOB_ASSOCIATED_DATA_SIZE (12) // "blob" + 8 byte origSize
+#define LARGEBLOB_KEY_SIZE             32
+#define LARGEBLOB_NONCE_SIZE           12
+#define LARGEBLOB_ASSOCIATED_DATA_SIZE 12 // "blob" + 8 byte origSize
 
 typedef struct fido_blob {
     uint8_t *buffer;

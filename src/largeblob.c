@@ -19,11 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#define LARGEBLOB_DIGEST_LENGTH             16
-#define LARGEBLOB_NONCE_LENGTH              12
-#define LARGEBLOB_TAG_LENGTH                16
-#define LARGEBLOB_DIGEST_SIZE               SHA256_BLOCK_SIZE
-#define LARGEBLOB_DIGEST_COMPARISON_SIZE    16
+#define LARGEBLOB_TAG_SIZE               AES_GCM_TAG_SIZE
+#define LARGEBLOB_DIGEST_SIZE            SHA256_BLOCK_SIZE
+#define LARGEBLOB_DIGEST_COMPARISON_SIZE 16
 
 // Empty CBOR array (80) followed by LEFT(SHA-256(h'80'), 16)
 static const uint8_t fido_largeblob_initial_array[] PROGMEM_MARKER = {0x80, 0x76, 0xbe, 0x8b, 0x52, 0x8d, 0x00, 0x75, 0xf7, 0xaa, 0xe9, 0x8d, 0x6f, 0xa5, 0x7a, 0x6d, 0x3c};
@@ -85,17 +83,15 @@ static size_t build_largeblob_get_cbor(size_t offset, size_t count, uint8_t *buf
 }
 
 /**
- * @brief Calculate the digest of a large-blob array and check if it matches the expected digest.
+ * @brief Calculate the digest of a large-blob array.
  *
  * @param out A buffer to write the digest to.
  * @param data A pointer to the largeblob array buffer.
-* @param data The length of the largeblob array buffer.
- * @return bool True if the given largeblob array digest matches the calculated digest.
+ * @param data The length of the largeblob array buffer.
+ * @return bool true on success.
  */
 static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_SIZE], const uint8_t *data, size_t len) {
-    uint8_t digest[SHA256_DIGEST_SIZE];
-
-    if (data == NULL || len == 0) {
+    if (data == NULL) {
         return false;
     }
     sha256(data, len, out);
@@ -123,6 +119,8 @@ static bool largeblob_array_check(fido_blob_t *array) {
       return false;
     }
 
+    // libfido2 uses a timing safe comparison for this. Timing-safety is not necessary,
+    // as this is a simple checksum and not security-relevant.
     return memcmp(expected_hash, array->buffer + body_len, LARGEBLOB_DIGEST_COMPARISON_SIZE) == 0;
 }
 
@@ -288,11 +286,11 @@ static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
         if(!cbor_bytestring_is_definite(value)) {
             return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
         }
-        if(value->length < AES_GCM_TAG_SIZE) {
+        if(value->length < LARGEBLOB_TAG_SIZE) {
             return FIDO_ERR_INVALID_ARGUMENT;
         }
         entry->ciphertext = value->start + value->header;
-        entry->ciphertext_len = value->end - value->start - value->header - AES_GCM_TAG_SIZE;
+        entry->ciphertext_len = value->end - value->start - value->header - LARGEBLOB_TAG_SIZE;
         entry->tag = entry->ciphertext + entry->ciphertext_len;
         return FIDO_OK;
     case 2: // nonce
@@ -343,7 +341,7 @@ static int largeblob_array_lookup(cb0r_t value, void* data) {
     }
 
     if(aes_gcm_ad(param->key, LARGEBLOB_KEY_SIZE,
-        entry.nonce, LARGEBLOB_NONCE_LENGTH,
+        entry.nonce, LARGEBLOB_NONCE_SIZE,
         entry.ciphertext, entry.ciphertext_len,
         entry.associated_data, sizeof(entry.associated_data),
         entry.tag,
