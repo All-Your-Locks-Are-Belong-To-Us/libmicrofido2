@@ -21,3 +21,4 @@
 #include "nfc.h"
 #include "param.h"
 #include "info.h"
+#include "largeblob.h"

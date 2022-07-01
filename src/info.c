@@ -76,7 +76,7 @@ static int copy_aaguid(const cb0r_t value, fido_cbor_info_t *ci) {
     if (!cbor_bytestring_is_definite(value) || value->length != sizeof(ci->aaguid)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
-    memcpy(ci->aaguid, value -> start + value->header, value->length);
+    memcpy(ci->aaguid, value->start + value->header, value->length);
     return FIDO_OK;
 }
 
@@ -417,7 +417,7 @@ static int fido_dev_get_cbor_info_tx(fido_dev_t *dev) {
  * @return int FIDO_OK if transmission succeeded.
  */
 static int fido_dev_get_cbor_info_rx(fido_dev_t *dev, fido_cbor_info_t *ci) {
-    unsigned char   msg[FIDO_MAXMSG];
+    unsigned char   msg[dev->maxmsgsize];
     int             msglen;
 
     fido_log_debug("%s: dev=%p, ci=%p, ms=%d", __func__, (void *)dev, (void *)ci, *ms);

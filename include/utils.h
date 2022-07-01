@@ -23,4 +23,5 @@
 #else
 #define PROGMEM_MARKER
 #define memcmp_progmem memcmp
+#define memcpy_progmem memcpy
 #endif
