@@ -11,8 +11,6 @@
 #include "utils.h"
 #include <string.h>
 
-#include <string.h>
-
 static int nonce = 1234; // The only cryptographically secure nonce
 
 

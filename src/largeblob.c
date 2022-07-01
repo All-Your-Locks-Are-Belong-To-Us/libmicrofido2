@@ -28,6 +28,14 @@ void fido_blob_reset(fido_blob_t *blob, uint8_t *buffer, size_t buffer_len) {
     blob->length = 0;
 }
 
+/**
+ * @brief Return the length of a chunk when reading the large blob.
+ *        Repeated requests to the large blob are used to read out the desired
+ *        amount of data in chunks.
+ *
+ * @param dev The device to get the chunk length for.
+ * @return size_t The chunk length.
+ */
 static size_t get_chunklen(fido_dev_t *dev) {
     uint64_t maxchunklen;
 
@@ -42,13 +50,13 @@ static size_t get_chunklen(fido_dev_t *dev) {
 }
 
 /**
- * @brief Builds a CBOR encoded largeblog get request according to the CTAP standard.
+ * @brief Builds a CBOR encoded largeblob get request according to the CTAP2 standard.
  * See https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#largeBlobsRW
- * 
- * @param offset The offset to read in the large blob
- * @param count  The amount of bytes to read from the large blob
- * @param buffer The buffer to write the result to
- * @param buffer_len The length of the buffer
+ *
+ * @param offset The offset to read in the large blob.
+ * @param count  The amount of bytes to read from the large blob.
+ * @param buffer The buffer to write the result to.
+ * @param buffer_len The length of the buffer.
  */
 static size_t build_largeblob_get_cbor(size_t offset, size_t count, uint8_t *buffer, size_t buffer_len) {
     cbor_writer_s writer;
@@ -70,6 +78,14 @@ static size_t build_largeblob_get_cbor(size_t offset, size_t count, uint8_t *buf
     return writer.length;
 }
 
+/**
+ * @brief Calculate the digest of a large-blob array and check if it matches the expected digest.
+ *
+ * @param out A buffer to write the digest to.
+ * @param data A pointer to the largeblob array buffer.
+* @param data The length of the largeblob array buffer.
+ * @return bool True if the given largeblob array digest matches the calculated digest.
+ */
 static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_LENGTH], const uint8_t *data, size_t len) {
     uint8_t digest[SHA256_DIGEST_LENGTH];
 
@@ -84,6 +100,12 @@ static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_LENGTH], const u
     return true;
 }
 
+/**
+ * @brief Check if a largeblob array contains valid header fields and digest.
+ *
+ * @param array A pointer to a largeblob array.
+ * @return bool true, if the length has been set correct and the digest matches.
+ */
 static bool largeblob_array_check(fido_blob_t *array) {
     uint8_t expected_hash[LARGEBLOB_DIGEST_LENGTH];
 
@@ -104,6 +126,14 @@ static bool largeblob_array_check(fido_blob_t *array) {
     return true;
 }
 
+/**
+ * @brief Transmit a CTAP command to read from the large blob.
+ *
+ * @param dev The device to read the large blob from.
+ * @param offset The offset in the large blob to start reading from.
+ * @param count The amount of bytes to read.
+ * @return int FIDO_OK when the operation was successful.
+ */
 static int largeblob_get_tx(fido_dev_t *dev, size_t offset, size_t count) {
     // 32 > 1 byte command + 1 byte map header + 1 byte get key + max. 9 byte get value + 1 byte offset key + max. 9 byte offset value
     uint8_t command_buffer[32];
@@ -122,6 +152,14 @@ static int largeblob_get_tx(fido_dev_t *dev, size_t offset, size_t count) {
     return FIDO_OK;
 }
 
+/**
+ * @brief Parse the response of authenticatorLargeBlob.
+ *
+ * @param key The key of the map entry.
+ * @param value The value of the map entry.
+ * @param arg The fido_blob_t to write the chunk from the response to.
+ * @return int FIDO_OK if parsing was successful.
+ */
 static int parse_largeblob_reply(const cb0r_t key, const cb0r_t value, void *arg) {
     fido_blob_t *chunk = (fido_blob_t*) arg;
 
@@ -142,6 +180,13 @@ static int parse_largeblob_reply(const cb0r_t key, const cb0r_t value, void *arg
     return FIDO_OK;
 }
 
+/**
+ * @brief Receive the answer to the `largeblob_get_tx` request.
+ *
+ * @param dev The device to read the answer from.
+ * @param chunk The chunk to store the returned large blob chunk in. Must already be allocated.
+ * @return int FIDO_OK when the operation was successful.
+ */
 static int largeblob_get_rx(fido_dev_t *dev, fido_blob_t *chunk) {
     uint8_t msg[dev->maxmsgsize];
     int msglen;
