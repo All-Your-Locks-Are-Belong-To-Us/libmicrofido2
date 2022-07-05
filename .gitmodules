@@ -7,3 +7,6 @@
 [submodule "external/tinf"]
 	path = external/tinf
 	url = https://github.com/All-Your-Locks-Are-Belong-To-Us/tinf.git
+[submodule "external/Monocypher"]
+	path = external/Monocypher
+	url = https://github.com/All-Your-Locks-Are-Belong-To-Us/Monocypher.git

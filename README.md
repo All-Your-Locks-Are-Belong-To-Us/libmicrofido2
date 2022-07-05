@@ -24,3 +24,4 @@ This library uses code from:
 - [`aes-gcm`](https://github.com/anibali/aes_gcm), licensed under BSD license.
 - [`tinf`](https://github.com/jibsen/tinf), licensed under zlib license.
 - [`crypto-algorithms`](https://github.com/B-Con/crypto-algorithms), public domain.
+- [`Monocypher`](https://github.com/LoupVaillant/Monocypher), licensed under CC-0.
