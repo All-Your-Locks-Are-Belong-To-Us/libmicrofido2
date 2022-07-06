@@ -20,7 +20,7 @@ CPU := atmega1284p
 EXTERNAL_LIBS :=
 EXTERNALS := cb0r aes_gcm crypto-algorithms tinf
 
-COMMONFLAGS := -Werror=shadow -mmcu=$(CPU)
+COMMONFLAGS := -Werror -mmcu=$(CPU)
 LIBRARY_PREPROCESSOR_MACROS :=
 EXAMPLES_PREPROCESSOR_MACROS :=
 INCLUDE_DIRS := include
