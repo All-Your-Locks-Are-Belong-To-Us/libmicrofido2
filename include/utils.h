@@ -16,8 +16,18 @@
     #define BITFIELD(x) (((uint64_t)1 << x))
 #endif
 
+// Endianess conversion tooling.
 #if defined(__AVR__)
+    // AVR is little endian.
     #define htole64(x) x
+#elif defined(__ZEPHYR__)
+    #include <zephyr/sys/byteorder.h>
+    #define htole64(x) sys_cpu_to_le64(x)
+#elif defined(__APPLE__)
+    #include <libkern/OSByteOrder.h>
+    #define htole64(x) OSSwapHostToLittleInt64(x)
+#elif defined(__has_include) && __has_include(<endian.h>) // Linux
+    #include <endian.h>
 #else
     #error Unsupported architecture
 #endif

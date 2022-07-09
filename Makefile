@@ -24,7 +24,7 @@ COMMONFLAGS := -Werror -mmcu=$(CPU)
 LIBRARY_PREPROCESSOR_MACROS :=
 EXAMPLES_PREPROCESSOR_MACROS :=
 INCLUDE_DIRS := include
-CFLAGS := -std=gnu99 -fstack-usage -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -Wall
+CFLAGS := -std=gnu99 -fstack-usage -ffunction-sections -fdata-sections -fshort-enums -Wall
 ARFLAGS :=
 PREPROCESSOR_MACROS := _FIDO_INTERNAL
 
