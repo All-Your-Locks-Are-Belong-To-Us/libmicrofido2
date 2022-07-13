@@ -22,3 +22,4 @@
 #include "param.h"
 #include "info.h"
 #include "largeblob.h"
+#include "crypto.h"

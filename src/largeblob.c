@@ -13,8 +13,7 @@
 #include "error.h"
 #include "cbor.h"
 #include "dev.h"
-#include <aes_gcm.h>
-#include <sha256.h>
+#include <crypto.h>
 #include <tinf.h>
 #include <stdint.h>
 #include <string.h>
@@ -94,7 +93,7 @@ static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_SIZE], const uin
     if (data == NULL) {
         return false;
     }
-    sha256(data, len, out);
+    fido_sha256(data, len, out);
     return true;
 }
 
@@ -340,7 +339,7 @@ static int largeblob_array_lookup(cb0r_t value, void* data) {
         return r;
     }
 
-    if(aes_gcm_ad(param->key, LARGEBLOB_KEY_SIZE,
+    if(fido_aes_gcm_decrypt(param->key, LARGEBLOB_KEY_SIZE,
         entry.nonce, LARGEBLOB_NONCE_SIZE,
         entry.ciphertext, entry.ciphertext_len,
         entry.associated_data, sizeof(entry.associated_data),
