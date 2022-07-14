@@ -282,6 +282,10 @@ static inline void fido_assert_reply_reset(fido_assert_reply_t *reply) {
     memset(reply, 0, sizeof(*reply));
 }
 
+void fido_assert_reset(fido_assert_t *assert) {
+    memset(assert, 0, sizeof(*assert));
+}
+
 int fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert) {
     fido_blob_t    *ecdh    = NULL;
     es256_pk_t     *pk      = NULL;
@@ -312,7 +316,7 @@ void fido_assert_set_rp(fido_assert_t *assert, const char* id) {
     assert->rp_id.ptr = (uint8_t*)id;
 }
 
-void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[SHA256_BLOCK_SIZE]) {
+void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[ASSERTION_CLIENT_DATA_HASH_LEN]) {
     memcpy(assert->cdh, hash, sizeof(assert->cdh));
 }
 
