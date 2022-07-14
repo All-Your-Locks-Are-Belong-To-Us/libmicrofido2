@@ -10,6 +10,7 @@
 
 #include "dev.h"
 #include "largeblob.h"
+#include <sha256.h>
 
 // ed25519 signatures are 512 bits long
 // We do not support other (longer) signatures for now.
@@ -28,8 +29,8 @@
 typedef void es256_pk_t;
 
 typedef struct fido_assert_blob {
-    uint8_t    *ptr;
-    size_t      len;
+    uint8_t const  *ptr;
+    size_t          len;
 } fido_assert_blob_t;
 
 typedef struct fido_assert_blob_array {
@@ -83,13 +84,11 @@ typedef struct fido_assert_reply {
 // TODO: function to parse auth data.
 
 typedef struct fido_assert {
-    fido_assert_blob_t          rp_id;      // relying party id
-    fido_assert_blob_t          cd;         // client data
-    fido_assert_blob_t          cdh;        // client data hash
-    fido_assert_blob_array_t    allow_list; // list of allowed credentials
-    fido_assert_opt_t           opt;        // user presence & user verification
-    fido_assert_ext_t           ext;        // enabled extensions
-    fido_assert_reply_t         reply;      // The parsed reply. Only one credential is supported!
+    fido_assert_blob_t          rp_id;                  // relying party id
+    uint8_t                     cdh[SHA256_BLOCK_SIZE]; // client data hash
+    fido_assert_opt_t           opt;                    // user presence & user verification
+    fido_assert_ext_t           ext;                    // enabled extensions
+    fido_assert_reply_t         reply;                  // The parsed reply. Only one credential is supported!
 } fido_assert_t;
 
 /**
@@ -102,3 +101,39 @@ typedef struct fido_assert {
  * @return success or failure
  */
 int fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert);
+
+/**
+ * @brief Set the relying party ID for an assertion.
+ *
+ * **Warning:** Do not change the string data until having called `fido_dev_get_assert`.
+ *
+ * @param assert A pointer to an assertion request to set the relying party on.
+ * @param id The relying party ID as string (NULL-terminated).
+ */
+void fido_assert_set_rp(fido_assert_t *assert, const char* id);
+
+/**
+ * @brief Set the client data hash for an assertion.
+ *
+ * Note: This should be non-predictable.
+ *
+ * @param assert A pointer to an assertion request to set the client data hash on.
+ * @param hash The SHA256 hash of the client data.
+ */
+void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[SHA256_BLOCK_SIZE]);
+
+/**
+ * @brief Set the options field for an assertion.
+ *
+ * @param assert A pointer to an assertion request to set the options on.
+ * @param options The options, see FIDO_ASSERT_OPTION_*.
+ */
+void fido_assert_set_options(fido_assert_t *assert, const fido_assert_opt_t options);
+
+/**
+ * @brief Set the extensions field for an assertion.
+ *
+ * @param assert A pointer to an assertion request to set the extensions on.
+ * @param extensions The extensions, see FIDO_ASSERT_EXTENSION_*.
+ */
+void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t extensions);
