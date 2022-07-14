@@ -45,7 +45,7 @@ static int build_get_assert_cbor(fido_assert_t *assert, uint8_t *buffer, size_t 
 
     // Parameter clientDataHash (0x02)
     CBOR_ASSERT_WRITER_STATUS_OK(writer, cbor_encode_uint, 0x02);
-    CBOR_ASSERT_WRITER_STATUS_OK(writer, cbor_encode_bytestring, assert->cdh.ptr, assert->cdh.len);
+    CBOR_ASSERT_WRITER_STATUS_OK(writer, cbor_encode_bytestring, assert->cdh, sizeof(assert->cdh));
 
     if(ext_set_count != 0){
         // Parameter extensions (0x04)
@@ -213,7 +213,6 @@ static int parse_get_assert_reply_entry(const cb0r_t key, const cb0r_t value, vo
     }
 }
 
-// TODO: function to set rpid
 // TODO: function to set client data (and compute hash)
 
 static int fido_dev_get_assert_tx(
@@ -223,7 +222,7 @@ static int fido_dev_get_assert_tx(
     const fido_blob_t *ecdh
 ) {
     // 32 > 1 byte command + 1 byte map header + 1 byte get key + max. 9 byte get value + 1 byte offset key + max. 9 byte offset value
-    int command_buffer_len = 1 + 1 + 1 + assert->rp_id.len + 1 + assert->cdh.len + 32;
+    int command_buffer_len = 1 + 1 + 1 + assert->rp_id.len + 1 + sizeof(assert->cdh) + 32;
     uint8_t command_buffer[command_buffer_len];
     int cbor_len;
 
@@ -287,12 +286,11 @@ int fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert) {
     es256_pk_t     *pk      = NULL;
     int             r;
 
-    if (assert->rp_id.ptr == NULL || assert->cdh.ptr == NULL) {
+    if (assert->rp_id.ptr == NULL) {
         fido_log_debug(
-            "%s: rp_id=%p, cdh.ptr=%p",
+            "%s: rp_id=%p",
             __func__,
             (void *)assert->rp_id,
-            (void *)assert->cdh.ptr
         );
         return FIDO_ERR_INVALID_ARGUMENT;
     }
@@ -305,4 +303,27 @@ int fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert) {
     r = fido_dev_get_assert_wait(dev, assert, pk, ecdh, &assert->reply);
 
     return r;
+}
+
+void fido_assert_set_rp(fido_assert_t *assert, const char* id) {
+    const size_t len = strlen(id);
+    assert->rp_id.len = len;
+    assert->rp_id.ptr = (uint8_t*)id;
+}
+
+void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[SHA256_BLOCK_SIZE]) {
+    memcpy(assert->cdh, hash, sizeof(assert->cdh));
+}
+
+void fido_assert_set_client_data(fido_assert_t *assert, const uint8_t *client_data, const size_t client_data_len) {
+    fido_sha256(client_data, client_data_len, assert->cdh);
+}
+
+
+void fido_assert_set_options(fido_assert_t *assert, const fido_assert_opt_t options) {
+    assert->opt = options;
+}
+
+void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t extensions) {
+    assert->ext = extensions;
 }
