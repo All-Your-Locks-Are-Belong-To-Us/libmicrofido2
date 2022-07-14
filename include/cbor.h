@@ -9,10 +9,15 @@
 #pragma once
 
 #include "cb0r.h"
+#include "utils.h"
 #include <stdbool.h>
 
 #define CBOR_WRITER_OK 0
 #define CBOR_WRITER_BUFFER_TOO_SHORT 1
+
+#define CBOR_MEMCMP(el, el_start, cmp, cmp_len) (el->length == cmp_len && !memcmp_progmem(el_start, cmp, cmp_len))
+// Subtract 1 from cmp size to get rid of null byte
+#define CBOR_STR_MEMCMP(el, cmp) (CBOR_MEMCMP(el, cb0r_value(el), cmp, sizeof(cmp) - 1))
 
 typedef int cbor_parse_array_item(const cb0r_t value, void *data);
 typedef int cbor_parse_map_item(const cb0r_t key, const cb0r_t value, void *data);
@@ -77,7 +82,7 @@ typedef struct cbor_writer {
  * @param buffer The new buffer.
  * @param writer The length of buffer.
  */
-void cbor_writer_reset(cbor_writer_t writer, uint8_t* buffer, size_t buffer_len);
+void cbor_writer_reset(cbor_writer_t writer, uint8_t* buffer, const size_t buffer_len);
 
 /**
  * @brief Check a writer's status.
@@ -94,7 +99,7 @@ bool cbor_writer_is_ok(cbor_writer_t writer);
  * @param value The integer value to write.
  * @return number of bytes written.
  */
-size_t cbor_encode_uint(cbor_writer_t writer, uint64_t value);
+size_t cbor_encode_uint(cbor_writer_t writer, const uint64_t value);
 
 /**
  * @brief Writes a negative int.
@@ -103,7 +108,7 @@ size_t cbor_encode_uint(cbor_writer_t writer, uint64_t value);
  * @param value The value to write. The interpretation the negative int is (-value - 1).
  * @return number of bytes written.
  */
-size_t cbor_encode_negint(cbor_writer_t writer, uint64_t value);
+size_t cbor_encode_negint(cbor_writer_t writer, const uint64_t value);
 
 /**
  * @brief Writes a bytestring.
@@ -113,7 +118,7 @@ size_t cbor_encode_negint(cbor_writer_t writer, uint64_t value);
  * @param string_len The length of the string.
  * @return number of bytes written.
  */
-size_t cbor_encode_bytestring(cbor_writer_t writer, uint8_t* string, size_t string_len);
+size_t cbor_encode_bytestring(cbor_writer_t writer, const uint8_t* string, const size_t string_len);
 
 /**
  * @brief Writes a UTF-8 string.
@@ -123,7 +128,7 @@ size_t cbor_encode_bytestring(cbor_writer_t writer, uint8_t* string, size_t stri
  * @param string_len The length of the string.
  * @return number of bytes written.
  */
-size_t cbor_encode_string(cbor_writer_t writer, uint8_t* string, size_t string_len);
+size_t cbor_encode_string(cbor_writer_t writer, const uint8_t* string, const size_t string_len);
 
 /**
  * @brief Writes the header of an array.
@@ -132,7 +137,7 @@ size_t cbor_encode_string(cbor_writer_t writer, uint8_t* string, size_t string_l
  * @param len The number of elements in the array.
  * @return number of bytes written.
  */
-size_t cbor_encode_array_start(cbor_writer_t writer, uint64_t len);
+size_t cbor_encode_array_start(cbor_writer_t writer, const uint64_t len);
 
 /**
  * @brief Writes the header of a map.
@@ -141,7 +146,7 @@ size_t cbor_encode_array_start(cbor_writer_t writer, uint64_t len);
  * @param len The number of entries (tuples) in the map.
  * @return number of bytes written.
  */
-size_t cbor_encode_map_start(cbor_writer_t writer, uint64_t len);
+size_t cbor_encode_map_start(cbor_writer_t writer, const uint64_t len);
 
 /**
  * @brief Writes a boolean.
@@ -150,4 +155,4 @@ size_t cbor_encode_map_start(cbor_writer_t writer, uint64_t len);
  * @param value The value to write.
  * @return number of bytes written.
  */
-size_t cbor_encode_boolean(cbor_writer_t writer, bool value);
+size_t cbor_encode_boolean(cbor_writer_t writer, const bool value);
