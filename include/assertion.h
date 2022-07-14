@@ -10,7 +10,6 @@
 
 #include "dev.h"
 #include "largeblob.h"
-#include <sha256.h>
 
 // ed25519 signatures are 512 bits long
 // We do not support other (longer) signatures for now.
@@ -25,6 +24,9 @@
 // However, we define this as our limit.
 #define ASSERTION_AUTH_DATA_LENGTH 128
 #define ASSERTION_AUTH_DATA_RPID_HASH_LEN 32
+
+// A SHA256 hash.
+#define ASSERTION_CLIENT_DATA_HASH_LEN 32
 
 typedef void es256_pk_t;
 
@@ -84,12 +86,19 @@ typedef struct fido_assert_reply {
 // TODO: function to parse auth data.
 
 typedef struct fido_assert {
-    fido_assert_blob_t          rp_id;                  // relying party id
-    uint8_t                     cdh[SHA256_BLOCK_SIZE]; // client data hash
-    fido_assert_opt_t           opt;                    // user presence & user verification
-    fido_assert_ext_t           ext;                    // enabled extensions
-    fido_assert_reply_t         reply;                  // The parsed reply. Only one credential is supported!
+    fido_assert_blob_t          rp_id;                                  // relying party id
+    uint8_t                     cdh[ASSERTION_CLIENT_DATA_HASH_LEN];    // client data hash
+    fido_assert_opt_t           opt;                                    // user presence & user verification
+    fido_assert_ext_t           ext;                                    // enabled extensions
+    fido_assert_reply_t         reply;                                  // The parsed reply. Only one credential is supported!
 } fido_assert_t;
+
+/**
+ * @brief Reset an assertion request to a known state.
+ * 
+ * @param assert A pointer to the assertion data structure to reset.
+ */
+void fido_assert_reset(fido_assert_t *assert);
 
 /**
  * @brief Get assertion from device.
@@ -120,7 +129,7 @@ void fido_assert_set_rp(fido_assert_t *assert, const char* id);
  * @param assert A pointer to an assertion request to set the client data hash on.
  * @param hash The SHA256 hash of the client data.
  */
-void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[SHA256_BLOCK_SIZE]);
+void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[ASSERTION_CLIENT_DATA_HASH_LEN]);
 
 /**
  * @brief Set the client data for an assertion.
