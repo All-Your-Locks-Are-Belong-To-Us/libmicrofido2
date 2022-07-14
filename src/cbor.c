@@ -84,7 +84,7 @@ static size_t cbor_encoded_len(uint64_t value) {
     }
 }
 
-void cbor_writer_reset(cbor_writer_t writer, uint8_t* buffer, size_t buffer_len) {
+void cbor_writer_reset(cbor_writer_t writer, uint8_t* buffer, const size_t buffer_len) {
     writer->buffer = buffer;
     writer->buffer_len = buffer_len;
     writer->writing_position = buffer;
@@ -96,14 +96,14 @@ bool cbor_writer_is_ok(cbor_writer_t writer) {
     return writer->status == CBOR_WRITER_OK;
 }
 
-static bool cbor_writer_can_advance(cbor_writer_t writer, size_t count) {
+static bool cbor_writer_can_advance(cbor_writer_t writer, const size_t count) {
     if(count > writer->buffer_len - writer->length || writer->status != CBOR_WRITER_OK) {
         return false;
     }
     return true;
 }
 
-static void cbor_writer_advance(cbor_writer_t writer, size_t count) {
+static void cbor_writer_advance(cbor_writer_t writer, const size_t count) {
     if(cbor_writer_can_advance(writer, count)) {
         writer->length += count;
         writer->writing_position = writer->buffer + writer->length;
@@ -112,7 +112,7 @@ static void cbor_writer_advance(cbor_writer_t writer, size_t count) {
     }
 }
 
-static size_t cbor_write(cbor_writer_t writer, cb0r_e type, uint64_t value) {
+static size_t cbor_write(cbor_writer_t writer, cb0r_e type, const uint64_t value) {
     size_t encoded_len = cbor_encoded_len(value);
     if(!cbor_writer_can_advance(writer, encoded_len)) {
         writer->status = CBOR_WRITER_BUFFER_TOO_SHORT;
@@ -123,15 +123,15 @@ static size_t cbor_write(cbor_writer_t writer, cb0r_e type, uint64_t value) {
     return encoded_len;
 }
 
-size_t cbor_encode_uint(cbor_writer_t writer, uint64_t value) {
+size_t cbor_encode_uint(cbor_writer_t writer, const uint64_t value) {
     return cbor_write(writer, CB0R_INT, value);
 }
 
-size_t cbor_encode_negint(cbor_writer_t writer, uint64_t value) {
+size_t cbor_encode_negint(cbor_writer_t writer, const uint64_t value) {
     return cbor_write(writer, CB0R_NEG, value);
 };
 
-size_t cbor_encode_bytestring(cbor_writer_t writer, uint8_t* string, size_t string_len) {
+size_t cbor_encode_bytestring(cbor_writer_t writer, const uint8_t* string, const size_t string_len) {
     size_t header_len = cbor_write(writer, CB0R_BYTE, string_len);
     if(cbor_writer_can_advance(writer, string_len)) {
         memcpy(writer->writing_position, string, string_len);
@@ -141,7 +141,7 @@ size_t cbor_encode_bytestring(cbor_writer_t writer, uint8_t* string, size_t stri
     return header_len;
 }
 
-size_t cbor_encode_string(cbor_writer_t writer, uint8_t* string, size_t string_len) {
+size_t cbor_encode_string(cbor_writer_t writer, const uint8_t* string, const size_t string_len) {
     size_t header_len = cbor_write(writer, CB0R_UTF8, string_len);
     if(cbor_writer_can_advance(writer, string_len)) {
         memcpy(writer->writing_position, string, string_len);
@@ -151,14 +151,14 @@ size_t cbor_encode_string(cbor_writer_t writer, uint8_t* string, size_t string_l
     return header_len;
 }
 
-size_t cbor_encode_array_start(cbor_writer_t writer, uint64_t len) {
+size_t cbor_encode_array_start(cbor_writer_t writer, const uint64_t len) {
     return cbor_write(writer, CB0R_ARRAY, len);
 }
 
-size_t cbor_encode_map_start(cbor_writer_t writer, uint64_t len) {
+size_t cbor_encode_map_start(cbor_writer_t writer, const uint64_t len) {
     return cbor_write(writer, CB0R_MAP, len);
 }
 
-size_t cbor_encode_boolean(cbor_writer_t writer, bool value) {
+size_t cbor_encode_boolean(cbor_writer_t writer, const bool value) {
     return cbor_write(writer, value ? CB0R_TRUE : CB0R_FALSE, 0);
 }
