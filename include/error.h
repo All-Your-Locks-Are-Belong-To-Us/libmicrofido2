@@ -72,3 +72,4 @@
 #define FIDO_ERR_NOTFOUND               -10
 #define FIDO_ERR_COMPRESS               -11
 #define FIDO_ERR_DECOMPRESS             -12
+#define FIDO_ERR_BUFFER_TOO_SHORT       -13
