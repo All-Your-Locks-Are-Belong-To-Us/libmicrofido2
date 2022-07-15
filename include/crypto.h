@@ -113,6 +113,13 @@ typedef void (*fido_sha512_t)(
  *
  * fido_ed25510_sign = &my_hardware_accelerated_ed25519_sign;
  *
+ * You can define any of the macros
+ * NO_SOFTWARE_{AES_GCM_ENCRYPT|AES_GCM_DECRYPT|ED25519_SIGN|ED25519_VERIFY|SHA256|SHA512}
+ * to prevent the software implementation of this algorithm to be included in the library.
+ * Be aware that AES_GCM_DECRYPT, ED25519_VERIFY and SHA256 are necessary for this library
+ * to function correctly. If you don't include the software implementation, replace it with
+ * another implementation as described above.
+ *
  * Additionally, these functions can be called from other code so they don't
  * have to be reimplemented if needed.
  */

@@ -13,7 +13,7 @@
 #include "error.h"
 #include "cbor.h"
 #include "dev.h"
-#include <crypto.h>
+#include "crypto.h"
 #include <tinf.h>
 #include <stdint.h>
 #include <string.h>
@@ -93,6 +93,11 @@ static bool largeblob_array_digest(uint8_t out[LARGEBLOB_DIGEST_SIZE], const uin
     if (data == NULL) {
         return false;
     }
+
+    if(fido_sha256 == NULL) {
+        return FIDO_ERR_INTERNAL;
+    }
+
     fido_sha256(data, len, out);
     return true;
 }
@@ -337,6 +342,10 @@ static int largeblob_array_lookup(cb0r_t value, void* data) {
     int r;
     if((r = cbor_iter_map(&map, largeblob_parse_array_entry, (void*) &entry)) != FIDO_OK) {
         return r;
+    }
+
+    if(fido_aes_gcm_decrypt == NULL) {
+        return FIDO_ERR_INTERNAL;
     }
 
     if(fido_aes_gcm_decrypt(param->key, LARGEBLOB_KEY_SIZE,
