@@ -3,6 +3,18 @@
 The **libmicrofido2** is a minimal FIDO2 library that is designed to be used in microcontrollers.
 It is heavily inspired by the [`libfido2`](https://github.com/Yubico/libfido2) and aims to have a similar API.
 
+## Building
+
+You need to install `cmake >= 3.10`. Having done that you can do:
+
+```bash
+mkdir -p build && cd build
+# for AVR8 Debug builds
+cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCMAKE_BUILD_TYPE=Debug
+# for AVR8 Release builds
+cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCMAKE_BUILD_TYPE=Release
+```
+
 ## Acknowledgements
 
 This library uses code from:
