@@ -59,3 +59,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf/include)
 
 # Link the object libraries
 target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf)
+
+#######################################
+# Examples
+add_subdirectory(examples)
