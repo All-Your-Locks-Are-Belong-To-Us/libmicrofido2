@@ -20,12 +20,15 @@
 #if defined(__AVR__)
     // AVR is little endian.
     #define htole64(x) x
+    #define be32toh(x) __builtin_bswap32(x)
 #elif defined(__ZEPHYR__)
     #include <zephyr/sys/byteorder.h>
     #define htole64(x) sys_cpu_to_le64(x)
+    #define be32toh(x) be32_to_sys_cpu(x)
 #elif defined(__APPLE__)
     #include <libkern/OSByteOrder.h>
     #define htole64(x) OSSwapHostToLittleInt64(x)
+    #define be32toh(x) OSSwapBigToHostInt32(x)
 #elif defined(__has_include) && __has_include(<endian.h>) // Linux
     #include <endian.h>
 #else

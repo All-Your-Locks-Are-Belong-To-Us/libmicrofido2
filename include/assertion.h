@@ -10,6 +10,7 @@
 
 #include "dev.h"
 #include "largeblob.h"
+#include "sha256.h" // TODO: Use Monocypher with abstraction
 
 // ed25519 signatures are 512 bits long
 // We do not support other (longer) signatures for now.
@@ -40,7 +41,7 @@ typedef struct fido_assert_blob_array {
     size_t              len;
 } fido_assert_blob_array_t;
 
-#define FIDO_ASSERT_EXTENSION_LARGE_BLOB_KEY        BITFIELD(0)
+#define FIDO_ASSERT_EXTENSION_LARGE_BLOB_KEY        FIDO_EXT_LARGEBLOB_KEY
 typedef uint8_t fido_assert_ext_t;
 
 #define FIDO_ASSERT_OPTION_UP                       BITFIELD(0)
@@ -65,19 +66,21 @@ typedef struct fido_cbor_credential {
 #define FIDO_AUTH_DATA_FLAGS_AT         BITFIELD(6)
 // Extension Data Included
 #define FIDO_AUTH_DATA_FLAGS_ED         BITFIELD(7)
+typedef uint8_t fido_assert_auth_data_flags_t;
 
 // See https://www.w3.org/TR/webauthn-2/#sctn-authenticator-data
-typedef struct fido_assertion_auth_data {
-    uint8_t     rpid_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN];
-    uint8_t     flags;
-    uint32_t    sign_count;
+typedef struct fido_assert_auth_data {
+    uint8_t                           rp_id_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN];
+    fido_assert_auth_data_flags_t     flags;
+    uint32_t                          sign_count;
     // TODO: extensions and attestedCredentialData not supported for now.
-} fido_assertion_auth_data_t;
+} fido_assert_auth_data_t;
 
 // See https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#sctn-getAssert-authnr-alg
 typedef struct fido_assert_reply {
     fido_cbor_credential_t  credential;
-    uint8_t                 auth_data[ASSERTION_AUTH_DATA_LENGTH];
+    uint8_t                 auth_data_raw[ASSERTION_AUTH_DATA_LENGTH];
+    fido_assert_auth_data_t auth_data;
     uint8_t                 signature[ASSERTION_SIGNATURE_LENGTH];
     uint8_t                 large_blob_key[LARGEBLOB_KEY_SIZE];
     bool                    has_large_blob_key;
@@ -146,3 +149,13 @@ void fido_assert_set_options(fido_assert_t *assert, const fido_assert_opt_t opti
  * @param extensions The extensions, see FIDO_ASSERT_EXTENSION_*.
  */
 void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t extensions);
+
+/**
+ * @brief Verify an assertion.
+ * 
+ * @param assert A pointer to an assertion request/reply struct.
+ * @param cose_alg A COSE algorithm identifier.
+ * @param pk The key to verify the signature.
+ * @return int 
+ */
+int fido_assert_verify(const fido_assert_t *assert, int cose_alg, const void *pk);
