@@ -36,18 +36,12 @@ typedef struct fido_assert_blob {
     size_t          len;
 } fido_assert_blob_t;
 
-typedef struct fido_assert_blob_array {
-    fido_assert_blob_t *ptr;
-    size_t              len;
-} fido_assert_blob_array_t;
-
 #define FIDO_ASSERT_EXTENSION_LARGE_BLOB_KEY        FIDO_EXT_LARGEBLOB_KEY
 typedef uint8_t fido_assert_ext_t;
 
 #define FIDO_ASSERT_OPTION_UP                       BITFIELD(0)
 #define FIDO_ASSERT_OPTION_UV                       BITFIELD(1)
 typedef uint8_t fido_assert_opt_t;
-
 
 #define FIDO_CREDENTIAL_TYPE_PUBLIC_KEY             BITFIELD(0)
 typedef uint8_t fido_cbor_credential_type_t;
@@ -86,7 +80,6 @@ typedef struct fido_assert_reply {
     bool                    has_large_blob_key;
 } fido_assert_reply_t;
 
-// TODO: function to parse auth data.
 
 typedef struct fido_assert {
     fido_assert_blob_t          rp_id;                                  // relying party id

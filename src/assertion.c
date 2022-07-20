@@ -199,11 +199,11 @@ static int cbor_assert_decode_large_blob_key(const cb0r_t large_blob_key, fido_a
 }
 
 /**
- * @brief Parse an entry of the authenticatorGetInfo CBOR map.
+ * @brief Parse an entry of the authenticatorGetAssertion CBOR map.
  *
  * @param key The cb0r element representing the map key
  * @param value The cb0r element representing the map value
- * @param arg User-passed argument (here: CBOR info).
+ * @param arg User-passed argument (here: assertion reply).
  * @return int FIDO_OK if entry could be parsed.
  */
 static int parse_get_assert_reply_entry(const cb0r_t key, const cb0r_t value, void *arg) {
