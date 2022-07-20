@@ -8,6 +8,9 @@ set(PRODUCT_NAME microfido2)
 #######################################
 # Compilation
 
+set(CMAKE_C_FLAGS_RELEASE "-Os")
+set(CMAKE_C_FLAGS_DEBUG "-ggdb -O0")
+
 add_compile_options(
     -std=gnu99
     -fstack-usage
@@ -16,17 +19,6 @@ add_compile_options(
     -fshort-enums
     -Wall
 )
-
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    add_compile_options(
-        -ggdb
-        -O0
-    )
-else()
-    add_compile_options(
-        -Os
-    )
-endif()
 
 file(GLOB SRC_FILES "src/*.c") # Load all files in src folder
 
@@ -56,8 +48,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/sha256/include)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf/include)
 
+# Add Monocypher library
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher/include)
+# Always use -Os, even if it is a debug build, because Monocypher is very large and would be even larger with debug information.
+target_compile_options(Monocypher PRIVATE -Os)
+target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
+
 # Link the object libraries
-target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf)
+target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
 
 #######################################
 # Examples
