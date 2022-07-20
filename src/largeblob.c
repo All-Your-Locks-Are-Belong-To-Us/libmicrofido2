@@ -261,7 +261,7 @@ typedef struct largeblob_array_entry {
 } largeblob_array_entry_t;
 
 static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compressed_len, size_t uncompressed_len_expected) {
-    uint32_t uncompressed_len_actual;
+    uint32_t uncompressed_len_actual = out->max_length;
     if(out->max_length < uncompressed_len_expected) {
         return FIDO_ERR_INVALID_ARGUMENT;
     }
