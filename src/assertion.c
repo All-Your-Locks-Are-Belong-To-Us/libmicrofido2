@@ -140,6 +140,27 @@ static int cbor_assert_decode_credential(const cb0r_t key, const cb0r_t value, v
     return FIDO_OK;
 }
 
+// See https://www.w3.org/TR/webauthn-2/#authenticator-data
+static int cbor_assert_decode_auth_data_inner(void* auth_data_raw, fido_assert_reply_t *ca) {
+    uint8_t* auth_data_bytes = (uint8_t*) auth_data_raw;
+
+    // 32 byte rpIdHash
+    memcpy(ca->auth_data.rp_id_hash, auth_data_bytes, ASSERTION_AUTH_DATA_RPID_HASH_LEN);
+    auth_data_bytes += ASSERTION_AUTH_DATA_RPID_HASH_LEN;
+
+    // 1 byte flags
+    ca->auth_data.flags = *auth_data_bytes;
+    auth_data_bytes += 1;
+
+    // 4 byte signature count
+    ca->auth_data.sign_count = be32toh(*((uint32_t*)auth_data_bytes));
+    auth_data_bytes += 4;
+
+    // attested credential data and extension unsupported for now.
+
+    return FIDO_OK;
+}
+
 static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(auth_data)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
@@ -147,8 +168,9 @@ static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_repl
     if(cb0r_vlen(auth_data) > sizeof(ca->auth_data)) {
         return FIDO_ERR_BUFFER_TOO_SHORT;
     }
-    memcpy(ca->auth_data, cb0r_value(auth_data), cb0r_vlen(auth_data));
-    return FIDO_OK;
+    memcpy(ca->auth_data_raw, cb0r_value(auth_data), cb0r_vlen(auth_data));
+    
+    return cbor_assert_decode_auth_data_inner(ca->auth_data_raw, ca);
 }
 
 static int cbor_assert_decode_signature(const cb0r_t signature, fido_assert_reply_t *ca) {
@@ -330,4 +352,90 @@ void fido_assert_set_options(fido_assert_t *assert, const fido_assert_opt_t opti
 
 void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t extensions) {
     assert->ext = extensions;
+}
+
+int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_opt_t assert_opt) {
+    int up = assert_opt & FIDO_ASSERT_OPTION_UP;
+    int uv = assert_opt & FIDO_ASSERT_OPTION_UV;
+	if (up == FIDO_ASSERT_OPTION_UP &&
+	    (auth_data_flags & FIDO_AUTH_DATA_FLAGS_UP == FIDO_AUTH_DATA_FLAGS_UP) == 0) {
+		fido_log_debug("%s: CTAP_AUTHDATA_USER_PRESENT", __func__);
+		return (-1); /* user not present */
+	}
+
+	if (uv == FIDO_ASSERT_OPTION_UV &&
+	    (auth_data_flags & FIDO_AUTH_DATA_FLAGS_UV == FIDO_AUTH_DATA_FLAGS_UV) == 0) {
+		fido_log_debug("%s: CTAP_AUTHDATA_USER_VERIFIED", __func__);
+		return (-1); /* user not verified */
+	}
+
+	return (0);
+}
+
+int
+fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash)
+{
+	uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
+    sha256(rp_id->ptr, rp_id->len, expected_hash);
+    
+    // TODO: Timing safe compare
+	return memcmp(expected_hash, obtained_hash, SHA256_DIGEST_LENGTH);
+}
+
+int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const uint8_t *pk) {
+    int r;
+
+    if(pk == NULL) {
+        return FIDO_ERR_INVALID_ARGUMENT;
+    }
+
+    const fido_assert_reply_t *reply = &(assert->reply);
+
+    /* do we have everything we need? */
+	if (assert->rp_id.ptr == NULL) {
+		return FIDO_ERR_INVALID_ARGUMENT;
+	}
+
+    if (fido_check_flags(reply->auth_data.flags, assert->opt) < 0) {
+		fido_log_debug("%s: fido_check_flags", __func__);
+		return FIDO_ERR_INVALID_PARAM;
+	}
+
+    // Extensions not supported for now.
+
+	if (fido_check_rp_id(&(assert->rp_id), reply->auth_data.rp_id_hash) != 0) {
+		fido_log_debug("%s: fido_check_rp_id", __func__);
+		return FIDO_ERR_INVALID_PARAM;
+	}
+
+    uint8_t hash_buf[64]; // Authdata + Client data hash
+	if (fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
+	    reply->auth_data_raw) < 0) {
+		fido_log_debug("%s: fido_get_signed_hash", __func__);
+		r =  FIDO_ERR_INTERNAL;
+        goto out;
+	}
+
+    int ok = -1;
+    switch(cose_alg) {
+        case COSE_ALGORITHM_EdDSA: {
+            ok = eddsa_pk_verify_sig(&hash_buf, pk, &reply->signature);
+        }
+        default: 
+            fido_log_debug("%s: unsupported cose_alg %d", __func__,
+		    cose_alg);
+		r = FIDO_ERR_UNSUPPORTED_OPTION;
+		goto out;
+    }
+
+    if (ok < 0)
+		r = FIDO_ERR_INVALID_SIG;
+	else
+		r = FIDO_OK;
+
+    
+out:
+	memset(hash_buf, 0, sizeof(hash_buf));
+
+	return r;
 }
