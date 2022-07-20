@@ -15,7 +15,6 @@ add_compile_options(
     -fdata-sections
     -fshort-enums
     -Wall
-    -Werror
 )
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
