@@ -29,6 +29,36 @@ add_definitions(
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library(${PRODUCT_NAME} STATIC ${SRC_FILES})
 
+option(USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT "include software AES GCM encryption" OFF)
+if(NOT USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT)
+    add_compile_definitions(NO_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT)
+endif()
+
+option(USE_SOFTWARE_CRYPTO_AES_GCM_DECRYPT "include software AES GCM decryption" ON)
+if(NOT USE_SOFTWARE_CRYPTO_AES_GCM_DECRYPT)
+    add_compile_definitions(NO_SOFTWARE_CRYPTO_AES_GCM_DECRYPT)
+endif()
+
+option(USE_SOFTWARE_CRYPTO_ED25519_SIGN "include software ed25519 signature generation" OFF)
+if(NOT USE_SOFTWARE_CRYPTO_ED25519_SIGN)
+    add_compile_definitions(NO_SOFTWARE_CRYPTO_ED25519_SIGN)
+endif()
+
+option(USE_SOFTWARE_CRYPTO_ED25519_VERIFY "include software ed25519 signature verification" ON)
+if(NOT USE_SOFTWARE_CRYPTO_ED25519_VERIFY)
+    add_compile_definitions(NO_SOFTWARE_CRYPTO_ED25519_VERIFY)
+endif()
+
+option(USE_SOFTWARE_CRYPTO_SHA256 "include software SHA256" ON)
+if(NOT USE_SOFTWARE_CRYPTO_SHA256)
+    add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA256)
+endif()
+
+option(USE_SOFTWARE_CRYPTO_SHA512 "include software SHA512" OFF)
+if(NOT USE_SOFTWARE_CRYPTO_SHA512)
+    add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA512)
+endif()
+
 #######################################
 # External libraries
 
