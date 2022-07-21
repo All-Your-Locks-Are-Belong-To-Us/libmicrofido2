@@ -376,9 +376,11 @@ int
 fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash)
 {
 	uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
-    sha256(rp_id->ptr, rp_id->len, expected_hash);
+    if(fido_sha256 == NULL) {
+        return FIDO_ERR_INTERNAL;
+    }
+    fido_sha256(rp_id->ptr, rp_id->len, expected_hash);
     
-    // TODO: Timing safe compare
 	return memcmp(expected_hash, obtained_hash, SHA256_DIGEST_LENGTH);
 }
 
@@ -408,7 +410,7 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
 		return FIDO_ERR_INVALID_PARAM;
 	}
 
-    uint8_t hash_buf[64]; // Authdata + Client data hash
+    uint8_t hash_buf[ASSERTION_PRE_IMAGE_LENGTH]; // Authdata + Client data hash
 	if (fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
 	    reply->auth_data_raw) < 0) {
 		fido_log_debug("%s: fido_get_signed_hash", __func__);
@@ -419,13 +421,19 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
     int ok = -1;
     switch(cose_alg) {
         case COSE_ALGORITHM_EdDSA: {
-            ok = eddsa_pk_verify_sig(&hash_buf, pk, &reply->signature);
+            if(fido_ed25519_verify == NULL) {
+                r = FIDO_ERR_INTERNAL;
+                goto out;
+            }
+
+            ok = fido_ed25519_verify(&reply->signature, pk, &hash_buf, sizeof(hash_buf));
+            break;
         }
         default: 
             fido_log_debug("%s: unsupported cose_alg %d", __func__,
 		    cose_alg);
-		r = FIDO_ERR_UNSUPPORTED_OPTION;
-		goto out;
+		    r = FIDO_ERR_UNSUPPORTED_OPTION;
+		    goto out;
     }
 
     if (ok < 0)
