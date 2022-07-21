@@ -29,6 +29,8 @@
 // A SHA256 hash.
 #define ASSERTION_CLIENT_DATA_HASH_LEN 32
 
+#define ASSERTION_PRE_IMAGE_LENGTH ASSERTION_AUTH_DATA_LENGTH + SHA256_DIGEST_LENGTH
+
 typedef void es256_pk_t;
 
 typedef struct fido_assert_blob {
