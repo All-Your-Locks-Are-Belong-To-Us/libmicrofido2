@@ -165,10 +165,12 @@ static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_repl
     if (!cbor_bytestring_is_definite(auth_data)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
-    if(cb0r_vlen(auth_data) > sizeof(ca->auth_data)) {
+    int auth_data_len = cb0r_vlen(auth_data);
+    if(auth_data_len > sizeof(ca->auth_data)) {
         return FIDO_ERR_BUFFER_TOO_SHORT;
     }
-    memcpy(ca->auth_data_raw, cb0r_value(auth_data), cb0r_vlen(auth_data));
+    memcpy(ca->auth_data_raw, cb0r_value(auth_data), auth_data_len);
+    ca->auth_data_length = auth_data_len;
     
     return cbor_assert_decode_auth_data_inner(ca->auth_data_raw, ca);
 }
@@ -384,6 +386,35 @@ fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash)
 	return memcmp(expected_hash, obtained_hash, SHA256_DIGEST_LENGTH);
 }
 
+/**
+ * @brief Create the data that was signed by the authenticator.
+ * 
+ * @param cose_alg The COSE algorithm identifier.
+ * @param buf A buffer to place the result in.
+ * @param client_data_hash The client data hash.
+ * @param auth_data The raw auth_data bytes.
+ * @param auth_data_length The length of the auth_data.
+ * @return int The length written in the buffer, or an error < 0
+ */
+int fido_get_signed_hash(int cose_alg, uint8_t* buf, uint8_t* client_data_hash, uint8_t* auth_data, int auth_data_length) {
+    
+    if(ASSERTION_CLIENT_DATA_HASH_LEN + auth_data_length < ASSERTION_PRE_IMAGE_LENGTH) {
+        return -1;
+    }
+    switch(cose_alg) {
+        case COSE_ALGORITHM_EdDSA: {
+            memcpy(buf, auth_data, auth_data_length);
+            memcpy(buf+auth_data_length, client_data_hash, ASSERTION_CLIENT_DATA_HASH_LEN);
+            return auth_data_length + ASSERTION_CLIENT_DATA_HASH_LEN;
+        }
+        default: 
+            fido_log_debug("%s: unsupported cose_alg %d", __func__,
+		    cose_alg);
+		    return -1;
+    }
+    
+}
+
 int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const uint8_t *pk) {
     int r;
 
@@ -411,8 +442,9 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
 	}
 
     uint8_t hash_buf[ASSERTION_PRE_IMAGE_LENGTH]; // Authdata + Client data hash
-	if (fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
-	    reply->auth_data_raw) < 0) {
+    int hash_buf_len;
+	if ((hash_buf_len = fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
+	    reply->auth_data_raw, reply->auth_data_length)) < 0) {
 		fido_log_debug("%s: fido_get_signed_hash", __func__);
 		r =  FIDO_ERR_INTERNAL;
         goto out;
@@ -426,7 +458,7 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
                 goto out;
             }
 
-            ok = fido_ed25519_verify(&reply->signature, pk, &hash_buf, sizeof(hash_buf));
+            ok = fido_ed25519_verify(&reply->signature, pk, &hash_buf, hash_buf_len);
             break;
         }
         default: 
