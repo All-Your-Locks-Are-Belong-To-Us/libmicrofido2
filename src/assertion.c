@@ -15,7 +15,7 @@
 
 /**
  * @brief Encode assertion request into CBOR.
- * 
+ *
  * @param assert The assertion request to encode.
  * @param buffer A pointer to the buffer to store the CBOR-encoded assertion request into.
  * @param buffer_len The length of the buffer.
@@ -171,7 +171,7 @@ static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_repl
     }
     memcpy(ca->auth_data_raw, cb0r_value(auth_data), auth_data_len);
     ca->auth_data_length = auth_data_len;
-    
+
     return cbor_assert_decode_auth_data_inner(ca->auth_data_raw, ca);
 }
 
@@ -299,7 +299,7 @@ static int fido_dev_get_assert_wait(fido_dev_t *dev, fido_assert_t *assert,
 
 /**
  * @brief Reset an assertion reply to a known state.
- * 
+ *
  * @param reply A pointer to the reply to reset.
  */
 static inline void fido_assert_reply_reset(fido_assert_reply_t *reply) {
@@ -355,36 +355,35 @@ void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t e
 int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_opt_t assert_opt) {
     int up = assert_opt & FIDO_ASSERT_OPTION_UP;
     int uv = assert_opt & FIDO_ASSERT_OPTION_UV;
-	if (up == FIDO_ASSERT_OPTION_UP &&
-	    (auth_data_flags & FIDO_AUTH_DATA_FLAGS_UP == FIDO_AUTH_DATA_FLAGS_UP) == 0) {
-		fido_log_debug("%s: CTAP_AUTHDATA_USER_PRESENT", __func__);
-		return (-1); /* user not present */
-	}
+    if (up == FIDO_ASSERT_OPTION_UP &&
+        ((auth_data_flags & FIDO_AUTH_DATA_FLAGS_UP) == FIDO_AUTH_DATA_FLAGS_UP) == 0) {
+        fido_log_debug("%s: CTAP_AUTHDATA_USER_PRESENT", __func__);
+        return (-1); /* user not present */
+    }
 
-	if (uv == FIDO_ASSERT_OPTION_UV &&
-	    (auth_data_flags & FIDO_AUTH_DATA_FLAGS_UV == FIDO_AUTH_DATA_FLAGS_UV) == 0) {
-		fido_log_debug("%s: CTAP_AUTHDATA_USER_VERIFIED", __func__);
-		return (-1); /* user not verified */
-	}
+    if (uv == FIDO_ASSERT_OPTION_UV &&
+        ((auth_data_flags & FIDO_AUTH_DATA_FLAGS_UV) == FIDO_AUTH_DATA_FLAGS_UV) == 0) {
+        fido_log_debug("%s: CTAP_AUTHDATA_USER_VERIFIED", __func__);
+        return (-1); /* user not verified */
+    }
 
-	return (0);
+    return (0);
 }
 
 int
-fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash)
-{
-	uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
+fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) {
+    uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
     if(fido_sha256 == NULL) {
         return FIDO_ERR_INTERNAL;
     }
     fido_sha256(rp_id->ptr, rp_id->len, expected_hash);
-    
-	return memcmp(expected_hash, obtained_hash, SHA256_DIGEST_LENGTH);
+
+    return memcmp(expected_hash, obtained_hash, SHA256_BLOCK_SIZE);
 }
 
 /**
  * @brief Create the data that was signed by the authenticator.
- * 
+ *
  * @param cose_alg The COSE algorithm identifier.
  * @param buf A buffer to place the result in.
  * @param client_data_hash The client data hash.
@@ -393,7 +392,6 @@ fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash)
  * @return int The length written in the buffer, or an error < 0
  */
 int fido_get_signed_hash(int cose_alg, uint8_t* buf, uint8_t* client_data_hash, uint8_t* auth_data, int auth_data_length) {
-    
     if(ASSERTION_CLIENT_DATA_HASH_LEN + auth_data_length < ASSERTION_PRE_IMAGE_LENGTH) {
         return -1;
     }
@@ -403,16 +401,17 @@ int fido_get_signed_hash(int cose_alg, uint8_t* buf, uint8_t* client_data_hash, 
             memcpy(buf+auth_data_length, client_data_hash, ASSERTION_CLIENT_DATA_HASH_LEN);
             return auth_data_length + ASSERTION_CLIENT_DATA_HASH_LEN;
         }
-        default: 
-            fido_log_debug("%s: unsupported cose_alg %d", __func__,
-		    cose_alg);
-		    return -1;
+        default:
+            fido_log_debug(
+                "%s: unsupported cose_alg %d",
+                __func__,
+                cose_alg
+            );
+            return -1;
     }
-    
 }
 
 int fido_assert_verify(const fido_assert_t *assert, int cose_alg, const void *pk) {
-
     int r;
 
     if(pk == NULL) {
@@ -422,30 +421,30 @@ int fido_assert_verify(const fido_assert_t *assert, int cose_alg, const void *pk
     const fido_assert_reply_t *reply = &(assert->reply);
 
     /* do we have everything we need? */
-	if (assert->rp_id.ptr == NULL) {
-		return FIDO_ERR_INVALID_ARGUMENT;
-	}
+    if (assert->rp_id.ptr == NULL) {
+        return FIDO_ERR_INVALID_ARGUMENT;
+    }
 
     if (fido_check_flags(reply->auth_data.flags, assert->opt) < 0) {
-		fido_log_debug("%s: fido_check_flags", __func__);
-		return FIDO_ERR_INVALID_PARAM;
-	}
+        fido_log_debug("%s: fido_check_flags", __func__);
+        return FIDO_ERR_INVALID_PARAM;
+    }
 
     // Extensions not supported for now.
 
-	if (fido_check_rp_id(&(assert->rp_id), reply->auth_data.rp_id_hash) != 0) {
-		fido_log_debug("%s: fido_check_rp_id", __func__);
-		return FIDO_ERR_INVALID_PARAM;
-	}
+    if (fido_check_rp_id(&(assert->rp_id), reply->auth_data.rp_id_hash) != 0) {
+        fido_log_debug("%s: fido_check_rp_id", __func__);
+        return FIDO_ERR_INVALID_PARAM;
+    }
 
     uint8_t hash_buf[ASSERTION_PRE_IMAGE_LENGTH]; // Authdata + Client data hash
     int hash_buf_len;
-	if ((hash_buf_len = fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
-	    reply->auth_data_raw, reply->auth_data_length)) < 0) {
-		fido_log_debug("%s: fido_get_signed_hash", __func__);
-		r =  FIDO_ERR_INTERNAL;
+    if ((hash_buf_len = fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
+        reply->auth_data_raw, reply->auth_data_length)) < 0) {
+        fido_log_debug("%s: fido_get_signed_hash", __func__);
+        r =  FIDO_ERR_INTERNAL;
         goto out;
-	}
+    }
 
     int ok = -1;
     switch(cose_alg) {
@@ -458,21 +457,23 @@ int fido_assert_verify(const fido_assert_t *assert, int cose_alg, const void *pk
             ok = fido_ed25519_verify(&reply->signature, pk, &hash_buf, hash_buf_len);
             break;
         }
-        default: 
-            fido_log_debug("%s: unsupported cose_alg %d", __func__,
-		    cose_alg);
-		    r = FIDO_ERR_UNSUPPORTED_OPTION;
-		    goto out;
+        default:
+            fido_log_debug(
+                "%s: unsupported cose_alg %d",
+                __func__,
+                cose_alg
+            );
+            r = FIDO_ERR_UNSUPPORTED_OPTION;
+            goto out;
     }
 
-    if (ok < 0)
-		r = FIDO_ERR_INVALID_SIG;
-	else
-		r = FIDO_OK;
+    if (ok < 0) {
+        r = FIDO_ERR_INVALID_SIG;
+    } else {
+        r = FIDO_OK;
+    }
 
-    
 out:
-	memset(hash_buf, 0, sizeof(hash_buf));
-
-	return r;
+    memset(hash_buf, 0, sizeof(hash_buf));
+    return r;
 }
