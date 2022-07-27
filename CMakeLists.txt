@@ -54,7 +54,7 @@ if(NOT USE_SOFTWARE_CRYPTO_SHA256)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA256)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_SHA512 "include software SHA512" OFF)
+option(USE_SOFTWARE_CRYPTO_SHA512 "include software SHA512" ON)
 if(NOT USE_SOFTWARE_CRYPTO_SHA512)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA512)
 endif()
