@@ -88,6 +88,7 @@ RUN cd /tmp && \
     if [ "$TARGETARCH" = "amd64" ]; then ARCHITECTURE=x86_64; elif [ "$TARGETARCH" = "arm64" ]; then ARCHITECTURE=arm64; else ARCHITECTURE=x86_64; fi && \
     curl -X POST -d "accept_license_agreement=accepted" https://www.segger.com/downloads/jlink/JLink_Linux_${SEGGER_JLINK_VERSION}_${ARCHITECTURE}.deb --output JLink_Linux_${SEGGER_JLINK_VERSION}_${ARCHITECTURE}.deb && \
     dpkg -i JLink_Linux_${SEGGER_JLINK_VERSION}_${ARCHITECTURE}.deb && \
+    if [ "$TARGETARCH" = "amd64" ]; then ln -s /opt/SEGGER/JLink/libjlinkarm.so /opt/SEGGER/JLink/jlinkarm.so; fi && \
     rm JLink_Linux_${SEGGER_JLINK_VERSION}_${ARCHITECTURE}.deb
 
 # TODO: udev rules.
