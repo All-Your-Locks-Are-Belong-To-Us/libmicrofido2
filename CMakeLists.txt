@@ -8,7 +8,7 @@ set(PRODUCT_NAME microfido2)
 #######################################
 # Compilation
 
-set(CMAKE_C_FLAGS_RELEASE "-Os")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS_DEBUG "-ggdb -O0")
 
 add_compile_options(
@@ -81,8 +81,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf/include)
 # Add Monocypher library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher/include)
-# Always use -Os, even if it is a debug build, because Monocypher is very large and would be even larger with debug information.
-target_compile_options(Monocypher PRIVATE -Os)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Use -Os in debug build because otherwise it wouldn't fit on AVR.
+    target_compile_options(Monocypher PRIVATE -Os)
+endif()
 target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
 
 # Link the object libraries
