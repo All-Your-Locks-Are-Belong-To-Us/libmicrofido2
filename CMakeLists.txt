@@ -2,16 +2,36 @@
 # General
 cmake_minimum_required(VERSION 3.10)
 
-project(libmicrofido2 C)
+if(NOT DEFINED ESP_PLATFORM)
+    project(libmicrofido2 C)
+endif()
+
 set(PRODUCT_NAME microfido2)
+
+#######################################
+# Options
+
+set(_build_examples_default ON)
+if(${ESP_PLATFORM})
+    set(_build_examples_default OFF)
+endif()
+option(BUILD_EXAMPLES "Build example applications" ${_build_examples_default})
 
 #######################################
 # Compilation
 
-set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_DEBUG "-ggdb -O0")
+set(libmicrofido2_release_flags -O3)
+set(libmicrofido2_debug_flags -ggdb -O0)
+string (REPLACE ";" " " libmicrofido2_debug_flags_str "${libmicrofido2_debug_flags}")
+string (REPLACE ";" " " libmicrofido2_release_flags_str "${libmicrofido2_release_flags}")
+set(CMAKE_C_FLAGS_RELEASE "${libmicrofido2_release_flags_str}")
+set(CMAKE_C_FLAGS_DEBUG "${libmicrofido2_debug_flags_str}")
 
-add_compile_options(
+set(libmicrofido2_definitions
+    -D_FIDO_INTERNAL
+)
+
+set(libmicrofido2_compile_options
     -std=gnu99
     -fstack-usage
     -ffunction-sections
@@ -22,12 +42,50 @@ add_compile_options(
 
 file(GLOB SRC_FILES "src/*.c") # Load all files in src folder
 
-add_definitions(
-    -D_FIDO_INTERNAL
+set(libmicrofido2_include_dir
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-add_library(${PRODUCT_NAME} STATIC ${SRC_FILES})
+if(NOT DEFINED ESP_PLATFORM)
+    include_directories(${libmicrofido2_include_dir})
+    add_library(${PRODUCT_NAME} STATIC ${SRC_FILES})
+endif()
+
+if(NOT DEFINED ESP_PLATFORM)
+    add_compile_options(
+        ${libmicrofido2_compile_options}
+    )
+
+    add_definitions(
+        ${libmicrofido2_definitions}
+    )
+endif()
+
+set(libmicrofido2_external_lib_include_dirs
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/aes_gcm/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/cb0r/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/sha256/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/tinf/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher/include
+)
+
+if(NOT DEFINED ESP_PLATFORM)
+    include_directories(${libmicrofido2_external_lib_include_dirs})
+endif()
+
+#######################################
+# ESP IDF
+
+if(${ESP_PLATFORM})
+    idf_component_register(
+        SRCS ${SRC_FILES}
+        INCLUDE_DIRS ${libmicrofido2_include_dir}
+        PRIV_INCLUDE_DIRS ${libmicrofido2_external_lib_include_dirs}
+    )
+    set(libmicrofido2_build_options ${libmicrofido2_compile_options} ${libmicrofido2_definitions} ${libmicrofido2_release_flags})
+    target_compile_options(${COMPONENT_LIB} PRIVATE ${libmicrofido2_build_options})
+    unset(libmicrofido2_build_options)
+endif()
 
 option(USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT "include software AES GCM encryption" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT)
@@ -64,23 +122,18 @@ endif()
 
 # Add AES GCM library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/aes_gcm)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/aes_gcm/include)
 
 # Add cb0r library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cb0r)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/cb0r/include)
 
 # Add SHA256 library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/sha256)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/sha256/include)
 
 # Add tinf library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf/include)
 
 # Add Monocypher library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher/include)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Use -Os in debug build because otherwise it wouldn't fit on AVR.
     target_compile_options(Monocypher PRIVATE -Os)
@@ -88,8 +141,14 @@ endif()
 target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
 
 # Link the object libraries
-target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
+if(${ESP_PLATFORM})
+    target_link_libraries(${COMPONENT_LIB} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
+else()
+    target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
+endif()
 
 #######################################
 # Examples
-add_subdirectory(examples)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
