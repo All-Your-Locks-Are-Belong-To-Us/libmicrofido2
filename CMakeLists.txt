@@ -2,7 +2,7 @@
 # General
 cmake_minimum_required(VERSION 3.10)
 
-if(NOT ${ESP_PLATFORM})
+if(NOT DEFINED ESP_PLATFORM)
     project(libmicrofido2 C)
 endif()
 
@@ -12,7 +12,7 @@ set(PRODUCT_NAME microfido2)
 # Options
 
 set(_build_examples_default ON)
-if (${ESP_PLATFORM})
+if(${ESP_PLATFORM})
     set(_build_examples_default OFF)
 endif()
 option(BUILD_EXAMPLES "Build example applications" ${_build_examples_default})
@@ -38,16 +38,16 @@ set(libmicrofido2_compile_options
 
 file(GLOB SRC_FILES "src/*.c") # Load all files in src folder
 
-set(libimicrofido2_include_dir
+set(libmicrofido2_include_dir
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-if(NOT ${ESP_PLATFORM})
-    include_directories(${libimicrofido2_include_dir})
+if(NOT DEFINED ESP_PLATFORM)
+    include_directories(${libmicrofido2_include_dir})
     add_library(${PRODUCT_NAME} STATIC ${SRC_FILES})
 endif()
 
-if(NOT ${ESP_PLATFORM})
+if(NOT DEFINED ESP_PLATFORM)
     add_compile_options(
         ${libmicrofido2_compile_options}
     )
@@ -65,17 +65,17 @@ set(libmicrofido2_external_lib_include_dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher/include
 )
 
-if (NOT ${ESP_PLATFORM})
+if(NOT DEFINED ESP_PLATFORM)
     include_directories(${libmicrofido2_external_lib_include_dirs})
 endif()
 
 #######################################
 # ESP IDF
 
-if (${ESP_PLATFORM})
+if(${ESP_PLATFORM})
     idf_component_register(
         SRCS ${SRC_FILES}
-        INCLUDE_DIRS ${libimicrofido2_include_dir}
+        INCLUDE_DIRS ${libmicrofido2_include_dir}
         PRIV_INCLUDE_DIRS ${libmicrofido2_external_lib_include_dirs}
     )
     target_compile_options(${COMPONENT_LIB} PRIVATE ${libmicrofido2_compile_options} ${libmicrofido2_definitions})
@@ -135,7 +135,7 @@ endif()
 target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
 
 # Link the object libraries
-if (${ESP_PLATFORM})
+if(${ESP_PLATFORM})
     target_link_libraries(${COMPONENT_LIB} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
 else()
     target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
