@@ -24,7 +24,7 @@
 #elif defined(__ZEPHYR__)
     #include <zephyr/sys/byteorder.h>
     #define htole64(x) sys_cpu_to_le64(x)
-    #define be32toh(x) be32_to_sys_cpu(x)
+    #define be32toh(x) sys_be32_to_cpu(x)
 #elif defined(__APPLE__)
     #include <libkern/OSByteOrder.h>
     #define htole64(x) OSSwapHostToLittleInt64(x)
