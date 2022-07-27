@@ -20,8 +20,12 @@ option(BUILD_EXAMPLES "Build example applications" ${_build_examples_default})
 #######################################
 # Compilation
 
-set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_C_FLAGS_DEBUG "-ggdb -O0")
+set(libmicrofido2_release_flags -O3)
+set(libmicrofido2_debug_flags -ggdb -O0)
+string (REPLACE ";" " " libmicrofido2_debug_flags_str "${libmicrofido2_debug_flags}")
+string (REPLACE ";" " " libmicrofido2_release_flags_str "${libmicrofido2_release_flags}")
+set(CMAKE_C_FLAGS_RELEASE "${libmicrofido2_release_flags_str}")
+set(CMAKE_C_FLAGS_DEBUG "${libmicrofido2_debug_flags_str}")
 
 set(libmicrofido2_definitions
     -D_FIDO_INTERNAL
@@ -78,7 +82,9 @@ if(${ESP_PLATFORM})
         INCLUDE_DIRS ${libmicrofido2_include_dir}
         PRIV_INCLUDE_DIRS ${libmicrofido2_external_lib_include_dirs}
     )
-    target_compile_options(${COMPONENT_LIB} PRIVATE ${libmicrofido2_compile_options} ${libmicrofido2_definitions})
+    set(libmicrofido2_build_options ${libmicrofido2_compile_options} ${libmicrofido2_definitions} ${libmicrofido2_release_flags})
+    target_compile_options(${COMPONENT_LIB} PRIVATE ${libmicrofido2_build_options})
+    unset(libmicrofido2_build_options)
 endif()
 
 option(USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT "include software AES GCM encryption" OFF)
