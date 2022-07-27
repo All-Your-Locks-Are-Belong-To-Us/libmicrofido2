@@ -10,7 +10,6 @@
 
 #include "dev.h"
 #include "largeblob.h"
-#include "sha256.h" // TODO: Use Monocypher with abstraction
 
 // ed25519 signatures are 512 bits long
 // We do not support other (longer) signatures for now.
@@ -21,13 +20,14 @@
 // We define this as our maximum in order to reduce stack usage.
 #define ASSERTION_MAX_KEY_HANDLE_LENGTH 255
 
+#define SHA256_DIGEST_SIZE 32
 // This is not defined by the standard.
 // However, we define this as our limit.
 #define ASSERTION_AUTH_DATA_LENGTH 128
-#define ASSERTION_AUTH_DATA_RPID_HASH_LEN 32
+#define ASSERTION_AUTH_DATA_RPID_HASH_LEN SHA256_DIGEST_SIZE
 
 // A SHA256 hash.
-#define ASSERTION_CLIENT_DATA_HASH_LEN 32
+#define ASSERTION_CLIENT_DATA_HASH_LEN SHA256_DIGEST_SIZE
 
 #define ASSERTION_PRE_IMAGE_LENGTH ASSERTION_AUTH_DATA_LENGTH + SHA256_DIGEST_SIZE
 
