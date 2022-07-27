@@ -18,7 +18,8 @@
 #include <stdint.h>
 
 /****************************** MACROS ******************************/
-#define SHA256_BLOCK_SIZE (32) // SHA256 outputs a 32 byte digest
+#define SHA256_BLOCK_SIZE (32)                  // SHA256 outputs a 32 byte digest
+#define SHA256_DIGEST_SIZE SHA256_BLOCK_SIZE    // SHA256 outputs a 32 byte digest
 
 /**************************** DATA TYPES ****************************/
 typedef uint8_t BYTE;  // 8-bit byte

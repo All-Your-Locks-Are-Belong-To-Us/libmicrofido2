@@ -14,10 +14,6 @@
 #include "cb0r.h"
 #include "cbor.h"
 
-#define CBOR_MEMCMP(el, el_start, cmp, cmp_len) (el->length == cmp_len && !memcmp_progmem(el_start, cmp, cmp_len))
-// Subtract 1 from cmp size to get rid of null byte
-#define CBOR_STR_MEMCMP(el, cmp) (CBOR_MEMCMP(el, el->start + el->header, cmp, sizeof(cmp) - 1))
-
 // versions
 static const char fido_2_1_version[] PROGMEM_MARKER        = "FIDO_2_1";
 static const char fido_2_0_version[] PROGMEM_MARKER        = "FIDO_2_0";
