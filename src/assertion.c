@@ -264,7 +264,11 @@ static int fido_dev_get_assert_tx(
     return FIDO_OK;
 }
 
-static int fido_dev_get_assert_rx(fido_dev_t *dev, fido_assert_t *assert, fido_assert_reply_t *ca) {
+static int fido_dev_get_assert_rx(
+    fido_dev_t *dev,
+    fido_assert_t *assert,
+    fido_assert_reply_t *reply
+) {
     uint8_t msg[dev->maxmsgsize];
     int msglen;
 
@@ -282,16 +286,20 @@ static int fido_dev_get_assert_rx(fido_dev_t *dev, fido_assert_t *assert, fido_a
         return  FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
-    return cbor_iter_map(&map, &parse_get_assert_reply_entry, ca);
+    return cbor_iter_map(&map, &parse_get_assert_reply_entry, reply);
 }
 
-static int fido_dev_get_assert_wait(fido_dev_t *dev, fido_assert_t *assert,
-    const es256_pk_t *pk, const fido_blob_t *ecdh, fido_assert_reply_t *ca
+static int fido_dev_get_assert_wait(
+    fido_dev_t *dev,
+    fido_assert_t *assert,
+    const es256_pk_t *pk,
+    const fido_blob_t *ecdh,
+    fido_assert_reply_t *reply
 ) {
     int r;
 
     if ((r = fido_dev_get_assert_tx(dev, assert, pk, ecdh)) != FIDO_OK ||
-        (r = fido_dev_get_assert_rx(dev, assert, ca)) != FIDO_OK)
+        (r = fido_dev_get_assert_rx(dev, assert, reply)) != FIDO_OK)
         return (r);
 
     return FIDO_OK;
@@ -391,14 +399,20 @@ fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) 
  * @param auth_data_length The length of the auth_data.
  * @return int The length written in the buffer, or an error < 0
  */
-int fido_get_signed_hash(int cose_alg, uint8_t* buf, uint8_t* client_data_hash, uint8_t* auth_data, int auth_data_length) {
-    if(ASSERTION_CLIENT_DATA_HASH_LEN + auth_data_length < ASSERTION_PRE_IMAGE_LENGTH) {
+int fido_get_signed_hash(
+    int cose_alg,
+    uint8_t* buf,
+    uint8_t* client_data_hash,
+    uint8_t* auth_data,
+    int auth_data_length
+) {
+    if((ASSERTION_CLIENT_DATA_HASH_LEN + auth_data_length) > ASSERTION_PRE_IMAGE_LENGTH) {
         return -1;
     }
     switch(cose_alg) {
         case COSE_ALGORITHM_EdDSA: {
             memcpy(buf, auth_data, auth_data_length);
-            memcpy(buf+auth_data_length, client_data_hash, ASSERTION_CLIENT_DATA_HASH_LEN);
+            memcpy(buf + auth_data_length, client_data_hash, ASSERTION_CLIENT_DATA_HASH_LEN);
             return auth_data_length + ASSERTION_CLIENT_DATA_HASH_LEN;
         }
         default:
