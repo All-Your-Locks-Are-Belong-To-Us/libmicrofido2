@@ -73,7 +73,7 @@ static int build_get_assert_cbor(fido_assert_t *assert, uint8_t *buffer, size_t 
         cbor_encode_uint(&writer, 0x05);
         cbor_encode_map_start(&writer, opt_set_count);
 
-        if(assert->opt & FIDO_ASSERT_OPTION_UP){
+        if (assert->opt & FIDO_ASSERT_OPTION_UP) {
             const unsigned char fido_option_up[] = "up";
             CBOR_ASSERT_WRITER_STATUS_OK(
                 writer,
@@ -84,10 +84,10 @@ static int build_get_assert_cbor(fido_assert_t *assert, uint8_t *buffer, size_t 
             CBOR_ASSERT_WRITER_STATUS_OK(
                 writer,
                 cbor_encode_boolean,
-                false
+                true
             );
         }
-        if(assert->opt & FIDO_ASSERT_OPTION_UV){
+        if (assert->opt & FIDO_ASSERT_OPTION_UV) {
             const unsigned char fido_option_uv[] = "uv";
             CBOR_ASSERT_WRITER_STATUS_OK(
                 writer,
