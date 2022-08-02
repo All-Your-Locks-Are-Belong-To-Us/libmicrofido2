@@ -138,20 +138,26 @@ static bool largeblob_array_check(fido_blob_t *array) {
  */
 static int largeblob_get_tx(fido_dev_t *dev, size_t offset, size_t count) {
     // 32 > 1 byte command + 1 byte map header + 1 byte get key + max. 9 byte get value + 1 byte offset key + max. 9 byte offset value
-    uint8_t command_buffer[32];
+    uint8_t command_buffer[32] = { 0 };
     size_t cbor_len;
+    int ret;
 
     command_buffer[0] = CTAP_CBOR_LARGEBLOB;
     if ((cbor_len = build_largeblob_get_cbor(offset, count, command_buffer + 1, sizeof(command_buffer) - 1)) <= 0) {
         fido_log_debug("%s: cbor encode", __func__);
-        return FIDO_ERR_INTERNAL;
+        ret = FIDO_ERR_INTERNAL;
+        goto out;
     }
     if (fido_tx(dev, CTAP_CMD_CBOR, command_buffer, 1 + cbor_len) != FIDO_OK) {
         fido_log_debug("%s: fido_tx", __func__);
-        return FIDO_ERR_TX;
+        ret = FIDO_ERR_TX;
+        goto out;
     }
 
-    return FIDO_OK;
+    ret = FIDO_OK;
+out:
+    memset(command_buffer, 0, sizeof(command_buffer));
+    return ret;
 }
 
 /**
@@ -191,22 +197,30 @@ static int parse_largeblob_reply(const cb0r_t key, const cb0r_t value, void *arg
 static int largeblob_get_rx(fido_dev_t *dev, fido_blob_t *chunk) {
     uint8_t msg[dev->maxmsgsize];
     int msglen;
+    int ret;
 
     if ((msglen = fido_rx(dev, CTAP_CMD_CBOR, msg, sizeof(msg))) < 0) {
         fido_log_debug("%s: fido_rx", __func__);
-        return FIDO_ERR_RX;
+        ret = FIDO_ERR_RX;
+        goto out;
     }
 
     if (msg[0] != FIDO_OK) {
-        return msg[0];
+        ret = msg[0];
+        goto out;
     }
 
     cb0r_s map;
     if (!cb0r_read(msg+1, msglen-1, &map) || map.type != CB0R_MAP) {
-        return  FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        ret = FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        goto out;
     }
 
-    return cbor_iter_map(&map, &parse_largeblob_reply, chunk);
+    ret = cbor_iter_map(&map, &parse_largeblob_reply, chunk);
+
+out:
+    memset(msg, 0, dev->maxmsgsize);
+    return ret;
 }
 
 int fido_dev_largeblob_get_array(fido_dev_t *dev, fido_blob_t *largeblob_array) {
@@ -392,7 +406,7 @@ int fido_dev_largeblob_get(fido_dev_t *dev, uint8_t *key, size_t key_len, fido_b
 
     cb0r_s array;
     if (!cb0r_read(largeblob_array.buffer, largeblob_array.length, &array) || array.type != CB0R_ARRAY) {
-        return  FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
 
     largeblob_array_lookup_param_t param = {
