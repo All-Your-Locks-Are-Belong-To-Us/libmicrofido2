@@ -249,18 +249,24 @@ static int fido_dev_get_assert_tx(
     int command_buffer_len = 1 + 1 + 1 + assert->rp_id.len + 1 + sizeof(assert->cdh) + 32;
     uint8_t command_buffer[command_buffer_len];
     int cbor_len;
+    int ret;
 
     command_buffer[0] = CTAP_CBOR_ASSERT;
     if ((cbor_len = build_get_assert_cbor(assert, command_buffer + 1, sizeof(command_buffer) - 1)) <= 0) {
         fido_log_debug("%s: cbor encode", __func__);
-        return FIDO_ERR_INTERNAL;
+        ret = FIDO_ERR_INTERNAL;
+        goto out;
     }
     if (fido_tx(dev, CTAP_CMD_CBOR, command_buffer, 1 + cbor_len) != FIDO_OK) {
         fido_log_debug("%s: fido_tx", __func__);
-        return FIDO_ERR_TX;
+        ret = FIDO_ERR_TX;
+        goto out;
     }
 
-    return FIDO_OK;
+    ret = FIDO_OK;
+out:
+    memset(command_buffer, 0, command_buffer_len);
+    return ret;
 }
 
 static int fido_dev_get_assert_rx(
@@ -270,22 +276,29 @@ static int fido_dev_get_assert_rx(
 ) {
     uint8_t msg[dev->maxmsgsize];
     int msglen;
+    int ret;
 
     if ((msglen = fido_rx(dev, CTAP_CMD_CBOR, msg, sizeof(msg))) < 0) {
         fido_log_debug("%s: fido_rx", __func__);
-        return FIDO_ERR_RX;
+        ret = FIDO_ERR_RX;
+        goto out;
     }
 
     if (msg[0] != FIDO_OK) {
-        return msg[0];
+        ret = msg[0];
+        goto out;
     }
 
     cb0r_s map;
     if (!cb0r_read(msg + 1, msglen - 1, &map) || map.type != CB0R_MAP) {
-        return  FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        ret = FIDO_ERR_CBOR_UNEXPECTED_TYPE;
+        goto out;
     }
 
-    return cbor_iter_map(&map, &parse_get_assert_reply_entry, reply);
+    ret = cbor_iter_map(&map, &parse_get_assert_reply_entry, reply);
+out:
+    memset(msg, 0, msglen);
+    return ret;
 }
 
 static int fido_dev_get_assert_wait(
@@ -382,15 +395,16 @@ int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_
     return (0);
 }
 
-int
-fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) {
+int fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) {
     uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
     if(fido_sha256 == NULL) {
         return FIDO_ERR_INTERNAL;
     }
     fido_sha256(rp_id->ptr, rp_id->len, expected_hash);
 
-    return memcmp(expected_hash, obtained_hash, SHA256_BLOCK_SIZE);
+    int res = memcmp(expected_hash, obtained_hash, SHA256_BLOCK_SIZE);
+    memset(expected_hash, 0, ASSERTION_AUTH_DATA_RPID_HASH_LEN);
+    return res;
 }
 
 /**
@@ -431,6 +445,7 @@ int fido_get_signed_hash(
 
 int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const uint8_t *pk) {
     int r;
+    uint8_t hash_buf[ASSERTION_PRE_IMAGE_LENGTH] = { 0 }; // Authdata + Client data hash
 
     if(pk == NULL) {
         return FIDO_ERR_INVALID_ARGUMENT;
@@ -448,14 +463,13 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
         return FIDO_ERR_INVALID_PARAM;
     }
 
-    // Extensions not supported for now.
+    // TODO: Extensions not supported for now.
 
     if (fido_check_rp_id(&(assert->rp_id), reply->auth_data.rp_id_hash) != 0) {
         fido_log_debug("%s: fido_check_rp_id", __func__);
         return FIDO_ERR_INVALID_PARAM;
     }
 
-    uint8_t hash_buf[ASSERTION_PRE_IMAGE_LENGTH]; // Authdata + Client data hash
     int hash_buf_len;
     if ((hash_buf_len = fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
         reply->auth_data_raw, reply->auth_data_length)) < 0) {
