@@ -76,7 +76,7 @@ typedef struct fido_assert_auth_data {
 typedef struct fido_assert_reply {
     fido_cbor_credential_t  credential;
     uint8_t                 auth_data_raw[ASSERTION_AUTH_DATA_LENGTH];
-    int                     auth_data_length;
+    size_t                  auth_data_length;
     fido_assert_auth_data_t auth_data;
     uint8_t                 signature[ASSERTION_SIGNATURE_LENGTH];
     uint8_t                 large_blob_key[LARGEBLOB_KEY_SIZE];

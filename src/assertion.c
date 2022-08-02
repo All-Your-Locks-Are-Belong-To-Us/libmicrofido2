@@ -165,7 +165,7 @@ static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_repl
     if (!cbor_bytestring_is_definite(auth_data)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
     }
-    int auth_data_len = cb0r_vlen(auth_data);
+    size_t auth_data_len = cb0r_vlen(auth_data);
     if(auth_data_len > sizeof(ca->auth_data)) {
         return FIDO_ERR_BUFFER_TOO_SHORT;
     }
@@ -408,9 +408,9 @@ int fido_get_signed_hash(
     uint8_t* buf,
     uint8_t* client_data_hash,
     uint8_t* auth_data,
-    int auth_data_length
+    size_t auth_data_length
 ) {
-    if((ASSERTION_CLIENT_DATA_HASH_LEN + auth_data_length) > ASSERTION_PRE_IMAGE_LENGTH) {
+    if((auth_data_length + ASSERTION_CLIENT_DATA_HASH_LEN) > ASSERTION_PRE_IMAGE_LENGTH) {
         return -1;
     }
     switch(cose_alg) {
