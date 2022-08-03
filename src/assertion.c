@@ -438,8 +438,8 @@ int fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_ha
 int fido_get_signed_hash(
     int cose_alg,
     uint8_t* buf,
-    uint8_t* client_data_hash,
-    uint8_t* auth_data,
+    const uint8_t* client_data_hash,
+    const uint8_t* auth_data,
     size_t auth_data_length
 ) {
     if((auth_data_length + ASSERTION_CLIENT_DATA_HASH_LEN) > ASSERTION_PRE_IMAGE_LENGTH) {
@@ -489,7 +489,7 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
     }
 
     int hash_buf_len;
-    if ((hash_buf_len = fido_get_signed_hash(cose_alg, &hash_buf, &assert->cdh,
+    if ((hash_buf_len = fido_get_signed_hash(cose_alg, hash_buf, assert->cdh,
         reply->auth_data_raw, reply->auth_data_length)) < 0) {
         fido_log_debug("%s: fido_get_signed_hash", __func__);
         r =  FIDO_ERR_INTERNAL;
@@ -504,7 +504,7 @@ int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const ui
                 goto out;
             }
 
-            ok = fido_ed25519_verify(&reply->signature, pk, &hash_buf, hash_buf_len);
+            ok = fido_ed25519_verify(reply->signature, pk, hash_buf, hash_buf_len);
             break;
         }
         default:
