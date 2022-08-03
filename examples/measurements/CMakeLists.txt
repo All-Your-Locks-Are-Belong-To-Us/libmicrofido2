@@ -1,8 +1,10 @@
+include(../../cmake/linker-map.cmake)
+
 set(measurement_dependencies gpio.c)
 
 function(add_measurement name)
     add_executable(${name} "${name}.c" ${measurement_dependencies})
-    target_link_options(${name} PRIVATE "-Wl,-Map=${name}.map")
+    add_linker_map_for_target(${name})
     target_link_libraries(${name} ${PRODUCT_NAME})
 endfunction()
 
