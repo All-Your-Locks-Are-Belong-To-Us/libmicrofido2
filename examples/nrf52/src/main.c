@@ -6,141 +6,360 @@
  * license that can be found in the LICENSE file.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
+#ifdef USE_HW_CRYPTO
+#include <psa/crypto.h>
+#endif
+
 #include <fido.h>
+#include "stateless_rp/stateless_rp.h"
+#include "stateless_rp/stateless_rp_nfc_simulator.h"
 
-static void *example_open() {
-    printk("open\n");
-    return (void*)1; // Just return a fake handle for the simulator.
-};
+#ifdef USE_HW_CRYPTO
 
-static void example_close(void *handle) {
-    printk("close\n");
+void sha256(const uint8_t *data, size_t data_len, uint8_t *hash) {
+    size_t olen; // We actually do not do anything with this parameter, but the API requires it.
+    psa_status_t status = psa_hash_compute(
+        PSA_ALG_SHA_256,
+        data,
+        data_len,
+        hash,
+        PSA_HASH_LENGTH(PSA_ALG_SHA_256),
+        &olen
+    );
+    assert(status == PSA_SUCCESS);
 }
 
-enum fido_state {
-    FIDO_STATE_UNINIT = 0,
-    FIDO_STATE_APPLET_SELECTION,
-    FIDO_STATE_GET_INFO,
-    FIDO_STATE_GET_LARGE_BLOB,
-};
-
-static enum fido_state sim_state = FIDO_STATE_UNINIT;
-
-static int example_read(void *handle, unsigned char *buf, const size_t len) {
-    printk("trying to read %zu bytes\n", len);
-    switch (sim_state)
-    {
-        case FIDO_STATE_APPLET_SELECTION:
-            {
-                static const uint8_t app_select_response[] = "U2F_V2";
-                static const size_t version_length = sizeof(app_select_response) - 1;
-                assert(len >= version_length + 2);
-                memcpy(buf, app_select_response, version_length);
-                buf[version_length] = 0x90;
-                buf[version_length + 1] = 0x00;
-                return version_length + 2;
-            }
-
-        case FIDO_STATE_GET_INFO:
-            {
-                // Send get info response.
-                // https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#authenticatorGetInfo
-                static const uint8_t get_info_response[] = {
-                    FIDO_OK,
-                    // {1: ["FIDO_2_1"], 2: ["largeBlobKey"], 3: h'30313233343536373839303132333435', 4: {"largeBlobs": true}, 5: 2048, 9: ["nfc"], 11: 1024}
-                    0xA7, 0x01, 0x81, 0x68, 0x46, 0x49, 0x44, 0x4F, 0x5F, 0x32, 0x5F, 0x31, 0x02, 0x81, 0x6C, 0x6C, 0x61, 0x72, 0x67, 0x65, 0x42, 0x6C, 0x6F, 0x62, 0x4B, 0x65, 0x79, 0x03, 0x50, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x04, 0xA1, 0x6A, 0x6C, 0x61, 0x72, 0x67, 0x65, 0x42, 0x6C, 0x6F, 0x62, 0x73, 0xF5, 0x05, 0x19, 0x08, 0x00, 0x09, 0x81, 0x63, 0x6E, 0x66, 0x63, 0x0B, 0x19, 0x04, 0x00,
-                    0x90, 0x00,
-                };
-                assert(len >= sizeof(get_info_response));
-                memcpy(buf, get_info_response, sizeof(get_info_response));
-                return sizeof(get_info_response);
-            }
-        case FIDO_STATE_GET_LARGE_BLOB:
-            {
-                // plaintext: kitten
-                // key: 0xCA, 0x97, 0x81, 0x12, 0xCA, 0x1B, 0xBD, 0xCA, 0xFA, 0xC2, 0x31, 0xB3, 0x9A, 0x23, 0xDC, 0x4D, 0xA7, 0x86, 0xEF, 0xF8, 0x14, 0x7C, 0x4E, 0x72, 0xB9, 0x80, 0x77, 0x85, 0xAF, 0xEE, 0x48, 0xBB
-                // [{1: h'53cbebb35d0cf479372a10a94892d8bbfc47a67257cb22958ad655455efb98cd', 2: h'33582CB89E78D63967801A77', 3: 6}]
-                static const uint8_t get_large_blob_response[] = {
-                    FIDO_OK,
-                    // {1: h'81A301582053CBEBB35D0CF479372A10A94892D8BBFC47A67257CB22958AD655455EFB98CD024C33582CB89E78D63967801A7703060b66d4ae669185b3f4722c5f576e172d'}
-                    // 0xA1, 0x01, 0x58, 0x55, 0x81, 0xA3, 0x01, 0x58, 0x20, 0x53, 0xCB, 0xEB, 0xB3, 0x5D, 0x0C, 0xF4, 0x79, 0x37, 0x2A, 0x10, 0xA9, 0x48, 0x92, 0xD8, 0xBB, 0xFC, 0x47, 0xA6, 0x72, 0x57, 0xCB, 0x22, 0x95, 0x8A, 0xD6, 0x55, 0x45, 0x5E, 0xFB, 0x98, 0xCD, 0x02, 0x4C, 0x33, 0x58, 0x2C, 0xB8, 0x9E, 0x78, 0xD6, 0x39, 0x67, 0x80, 0x1A, 0x77, 0x03, 0x06, 0x0B, 0x66, 0xD4, 0xAE, 0x66, 0x91, 0x85, 0xB3, 0xF4, 0x72, 0x2C, 0x5F, 0x57, 0x6E, 0x17, 0x2D,
-                    // from Chromium.
-                    0xA1, 0x01, 0x58, 0xAC, 0x81, 0xA3, 0x01, 0x58, 0x86, 0x7D, 0xB9, 0x8C, 0x5B, 0x62, 0xC6, 0x84, 0x4A, 0x89, 0xAC, 0x92, 0x87, 0x25, 0x32, 0xE0, 0x09, 0xCF, 0xD6, 0xFB, 0x86, 0x5A, 0xB8, 0x36, 0xF3, 0xD2, 0x46, 0xC7, 0xBD, 0x98, 0x69, 0x9C, 0x9B, 0x6F, 0x42, 0x2F, 0x25, 0xB0, 0x29, 0xCC, 0x6B, 0xAF, 0xB0, 0xE8, 0x33, 0xB4, 0x5F, 0xF7, 0x96, 0x33, 0x3D, 0xED, 0x38, 0x59, 0x95, 0x2F, 0x8B, 0x02, 0x9C, 0x03, 0x09, 0xC9, 0xAE, 0x75, 0xAC, 0x37, 0xC8, 0xB4, 0x70, 0x5D, 0xBB, 0x9D, 0x7D, 0x75, 0xE4, 0x90, 0x50, 0x71, 0xF2, 0x43, 0x7E, 0x77, 0x4C, 0xD6, 0xE1, 0xC1, 0xBA, 0xE2, 0x69, 0x95, 0x23, 0x72, 0xC9, 0x8E, 0xEE, 0xB7, 0x51, 0xED, 0xB5, 0xB0, 0x25, 0x00, 0x81, 0x18, 0xAA, 0xD4, 0xAF, 0x59, 0xC6, 0xF4, 0x8E, 0x84, 0x63, 0x91, 0x97, 0x6F, 0x10, 0xF8, 0xF6, 0x92, 0x34, 0x15, 0x1E, 0x34, 0x52, 0xD4, 0x2A, 0x9E, 0xCA, 0x96, 0x9C, 0x34, 0x5F, 0x68, 0x95, 0x02, 0x4C, 0x6A, 0x26, 0x7B, 0x79, 0x97, 0xBE, 0x23, 0x44, 0x60, 0x33, 0x65, 0xA1, 0x03, 0x18, 0x71, 0x46, 0x86, 0x64, 0x52, 0x87, 0xB8, 0x0B, 0x74, 0x11, 0xEA, 0x56, 0x19, 0xB9, 0xD2, 0x96, 0xDD,
-                    0x90, 0x00,
-                };
-                assert(len >= sizeof(get_large_blob_response));
-                memcpy(buf, get_large_blob_response, sizeof(get_large_blob_response));
-                return sizeof(get_large_blob_response);
-            }
-    case FIDO_STATE_UNINIT:
-    default:
-        return 0;
-        break;
-    }
+void sha512(const uint8_t *data, size_t data_len, uint8_t *hash) {
+    size_t olen; // We actually do not do anything with this parameter, but the API requires it.
+    psa_status_t status = psa_hash_compute(
+        PSA_ALG_SHA_512,
+        data,
+        data_len,
+        hash,
+        PSA_HASH_LENGTH(PSA_ALG_SHA_512),
+        &olen
+    );
+    assert(status == PSA_SUCCESS);
 }
 
-static int example_write(void *handle, const unsigned char *buf, const size_t len) {
-    // Output the buffer.
-    printk("writing: ");
-    for (size_t i = 0; i < len; ++i) {
-        printk("%02x ", buf[i]);
-    }
-    printk("\n");
+int aes_gcm_encrypt(
+    const uint8_t *key, size_t key_len,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *plaintext, size_t plaintext_len,
+    const uint8_t *aad, size_t aad_len,
+    uint8_t *ciphertext, uint8_t *tag
+) {
+    psa_status_t status;
+    int ret;
+    const size_t tag_len = PSA_AEAD_TAG_LENGTH(PSA_KEY_TYPE_AES, key_len * 8, PSA_ALG_GCM);
+    uint8_t cipher_buf[plaintext_len + tag_len];
+    size_t cipher_size;
 
-    // Stupid state machine, that does not know anything about parsing the message completely.
-    switch (sim_state) {
-        case FIDO_STATE_UNINIT:
-            sim_state = FIDO_STATE_APPLET_SELECTION;
-            break;
-        case FIDO_STATE_APPLET_SELECTION:
-            sim_state = FIDO_STATE_GET_INFO;
-            break;
-        case FIDO_STATE_GET_INFO:
-            sim_state = FIDO_STATE_GET_LARGE_BLOB;
-            break;
-        default: break;
+
+    // Import the key.
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_GCM);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&key_attributes, key_len * 8);
+
+    psa_key_handle_t key_handle;
+    
+    status = psa_import_key(&key_attributes, key, key_len, &key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_import_key failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
     }
-    return (int)len;
+
+    status = psa_aead_encrypt(
+        key_handle,
+        PSA_ALG_GCM,
+        iv,
+        iv_len,
+        aad,
+        aad_len,
+        plaintext,
+        plaintext_len,
+        cipher_buf,
+        sizeof(cipher_buf),
+        &cipher_size
+    );
+    if (status != PSA_SUCCESS) {
+        printk("psa_aead_encrypt failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+    }
+    assert(cipher_size == plaintext_len + tag_len);
+
+    memcpy(ciphertext, cipher_buf, plaintext_len);
+    memcpy(tag, cipher_buf + plaintext_len, tag_len);
+    ret = 0;
+out:
+    memset(cipher_buf, 0, sizeof(cipher_buf));
+    psa_reset_key_attributes(&key_attributes);
+    status = psa_destroy_key(key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_destroy_key failed! (Error: %d)\n", status);
+        ret = -1;
+    }
+    return ret;
 }
 
-static const fido_dev_io_t nfc_io = {
-    .open = example_open,
-    .close = example_close,
-    .read = example_read,
-    .write = example_write
-};
+int aes_gcm_decrypt(
+    const uint8_t *key, size_t key_len,
+    const uint8_t *iv, size_t iv_len,
+    const uint8_t *ciphertext, size_t ciphertext_len,
+    const uint8_t *aad, size_t aad_len,
+    const uint8_t *tag,
+    uint8_t *plaintext
+) {
+    psa_status_t status;
+    int ret;
+    const size_t tag_len = PSA_AEAD_TAG_LENGTH(PSA_KEY_TYPE_AES, key_len * 8, PSA_ALG_GCM);
+    const size_t ciphertext_buf_len = ciphertext_len + tag_len;
+    uint8_t ciphertext_buf[ciphertext_buf_len];
+    uint8_t plaintext_buf[ciphertext_len];
+    size_t decrypted_plaintext_size;
+
+    // Import the key.
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_GCM);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&key_attributes, key_len * 8);
+
+    psa_key_handle_t key_handle;
+    
+    status = psa_import_key(&key_attributes, key, key_len, &key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_import_key failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+    }
+
+    memcpy(ciphertext_buf, ciphertext, ciphertext_len);
+    memcpy(ciphertext_buf + ciphertext_len, tag, tag_len);
+
+    status = psa_aead_decrypt(
+        key_handle,
+        PSA_ALG_GCM,
+        iv,
+        iv_len,
+        aad,
+        aad_len,
+        ciphertext_buf,
+        ciphertext_buf_len,
+        plaintext_buf,
+        sizeof(plaintext_buf),
+        &decrypted_plaintext_size
+    );
+    if (status != PSA_SUCCESS) {
+        printk("psa_aead_encrypt failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+    }
+
+    if (decrypted_plaintext_size != ciphertext_len) {
+        printk("Invalid plaintext length detected.\n");
+        ret = -1;
+        goto out;
+    }
+
+    memcpy(plaintext, plaintext_buf, decrypted_plaintext_size);
+    ret = 0;
+out:
+    memset(plaintext_buf, 0, decrypted_plaintext_size);
+    memset(ciphertext_buf, 0, ciphertext_buf_len);
+    psa_reset_key_attributes(&key_attributes);
+    status = psa_destroy_key(key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_destroy_key failed! (Error: %d)\n", status);
+        ret = -1;
+    }
+    return ret;
+}
+
+int ed25519_sign(
+    uint8_t *signature,
+    const uint8_t *secret_key,
+    const uint8_t *message,
+    size_t message_len
+) {
+    psa_status_t status;
+    int ret;
+
+    // Import the key.
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_PURE_EDDSA);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_TWISTED_EDWARDS));
+    psa_set_key_bits(&key_attributes, 255); // Ed25519, see https://armmbed.github.io/mbed-crypto/html/api/keys/types.html#c.PSA_ECC_FAMILY_TWISTED_EDWARDS
+
+    psa_key_handle_t key_handle;
+
+    // Even though we set the key_type to a KEY_PAIR, we only need to import the secret key, as the library will derive the public key itself.
+    status = psa_import_key(&key_attributes, secret_key, 32, &key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_import_key failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+    }
+
+    size_t signature_length;
+    status = psa_sign_message(
+        key_handle,
+        PSA_ALG_PURE_EDDSA,
+        message,
+        message_len,
+        signature,
+        64,
+        &signature_length
+    );
+
+    if (status != PSA_SUCCESS) {
+        printk("psa_sign_message failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+    }
+
+    ret = 0;
+out:
+    psa_reset_key_attributes(&key_attributes);
+    status = psa_destroy_key(key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_destroy_key failed! (Error: %d)\n", status);
+        ret = -1;
+    }
+    return ret;
+}
+
+int ed25519_verify(
+    const uint8_t *signature,
+    const uint8_t *public_key,
+    const uint8_t *message,
+    size_t message_len
+) {
+    psa_status_t status;
+    int ret;
+
+    // Import the key.
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_MESSAGE);
+    psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_VOLATILE);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_PURE_EDDSA);
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_TWISTED_EDWARDS));
+    psa_set_key_bits(&key_attributes, 255); // Ed25519, see https://armmbed.github.io/mbed-crypto/html/api/keys/types.html#c.PSA_ECC_FAMILY_TWISTED_EDWARDS
+
+    psa_key_handle_t key_handle;
+
+    status = psa_import_key(&key_attributes, public_key, 32, &key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_import_key failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+    }
+
+    status = psa_verify_message(
+        key_handle,
+        PSA_ALG_PURE_EDDSA,
+        message,
+        message_len,
+        signature,
+        64
+    );
+
+    if (status != PSA_SUCCESS) {
+        printk("psa_verify_message failed! (Error: %d)\n", status);
+        ret = -1;
+        goto out;
+
+    }
+    ret = 0;
+out:
+    psa_reset_key_attributes(&key_attributes);
+    status = psa_destroy_key(key_handle);
+    if (status != PSA_SUCCESS) {
+        printk("psa_destroy_key failed! (Error: %d)\n", status);
+        ret = -1;
+    }
+    return ret;
+}
+
+int init_crypto() {
+    if (psa_crypto_init() != PSA_SUCCESS) {
+        return -1;
+    }
+    fido_sha256 = &sha256;
+    fido_sha512 = &sha512;
+    fido_aes_gcm_encrypt = &aes_gcm_encrypt;
+    fido_aes_gcm_decrypt = &aes_gcm_decrypt;
+    fido_ed25519_sign = &ed25519_sign;
+    fido_ed25519_verify = &ed25519_verify;
+    return 0;
+}
+#endif
 
 int main(void) {
-    fido_dev_t dev;
-    if (fido_init_nfc_device(&dev, &nfc_io) != FIDO_OK) {
-        return 1;
+    #ifdef USE_HW_CRYPTO
+    if (init_crypto() != 0) {
+        printk("Failed to initialize hardware cryptography. Aborting.\n");
+        return -1;
+    } else {
+        printk("Initialized hardware cryptography.\n");
     }
 
-    if (fido_dev_open(&dev) != FIDO_OK) {
-        return 2;
-    }
+    const uint8_t key[32] = "YellowSubmarineYellowSubmarine";
+    const uint8_t iv[12] = "123456789012";
+    const uint8_t ad[6] = "kitten";
+    const uint8_t plaintext[17] = "YellowSubmarineY";
+    uint8_t decrypted_plaintext[sizeof(plaintext)] = {0};
+    uint8_t ciphertext[sizeof(plaintext)];
+    uint8_t tag[16];
+    int e = aes_gcm_encrypt(key, sizeof(key), iv, sizeof(iv), plaintext, sizeof(plaintext), ad, sizeof(ad), ciphertext, tag);
+    int f = aes_gcm_decrypt(key, sizeof(key), iv, sizeof(iv), ciphertext, sizeof(ciphertext), ad, sizeof(ad), tag, decrypted_plaintext);
+    printk("AES encryption: %d %d\n", e, f);
 
-    // Retrieve large blob.
-    uint8_t key[] = {
-        // 0xCA, 0x97, 0x81, 0x12, 0xCA, 0x1B, 0xBD, 0xCA, 0xFA, 0xC2, 0x31, 0xB3, 0x9A, 0x23, 0xDC, 0x4D, 0xA7, 0x86, 0xEF, 0xF8, 0x14, 0x7C, 0x4E, 0x72, 0xB9, 0x80, 0x77, 0x85, 0xAF, 0xEE, 0x48, 0xBB,
-        // from Chromium
-        0xF7, 0x8E, 0x65, 0x59, 0xF4, 0xE8, 0x70, 0xF2, 0xF0, 0x37, 0x41, 0x63, 0x85, 0x31, 0xEF, 0x31, 0x50, 0x8F, 0x76, 0x18, 0x73, 0x4B, 0x68, 0x7A, 0x4A, 0x42, 0x16, 0x65, 0xEA, 0x6A, 0x7F, 0xA2,
+    const uint8_t ed25519_private_key[] = {
+        0x7D, 0x7C, 0x0A, 0x59, 0xA2, 0xAE, 0x18, 0x17, 0xCA, 0x23, 0x4D, 0x97, 0x77, 0x3D, 0xD6, 0xEE, 0x71, 0xFD, 0x81, 0x8A, 0xDB, 0xC9, 0x1F, 0x65, 0x3B, 0x43, 0x02, 0xC7, 0x2D, 0x4A, 0x4C, 0x22,
     };
-    fido_blob_t blob;
-    uint8_t outbuf[2048] = {0};
-    fido_blob_reset(&blob, outbuf, sizeof(outbuf));
-    if (fido_dev_largeblob_get(&dev, key, sizeof(key), &blob) != FIDO_OK) {
-        return 3;
-    }
+    const uint8_t ed25519_public_key[] = {
+        0xe8, 0x08, 0x65, 0x0a, 0x77, 0x1e, 0xbd, 0xb2, 0x4c, 0xe6, 0xd6, 0x1c, 0x0c, 0xf1, 0x85, 0x9c, 0x0e, 0xc1, 0xf5, 0x10, 0xec, 0x84, 0x6e, 0x10, 0xe6, 0x25, 0x77, 0xaa, 0x15, 0x82, 0x15, 0xa1,
+    };
+    uint8_t signature[64];
+    const uint8_t sigmessage[6] = "kitten"; 
+    int g = ed25519_sign(
+        signature,
+        ed25519_private_key,
+        sigmessage,
+        sizeof(sigmessage)
+    );
+    int h = ed25519_verify(
+        signature,
+        ed25519_public_key,
+        sigmessage,
+        sizeof(sigmessage)
+    );
+    printk("signature check: %d %d\n", g, h);
+    #endif
 
-    if (fido_dev_close(&dev) != FIDO_OK) {
-        return 4;
+    fido_dev_t dev;
+    if (prepare_stateless_rp_nfc_simulator_device(&dev) != 0) {
+        printk("Could not setup simulator device.\n");
+        return -1;
     }
-
-    return 0;
+    const uint8_t updater_public_key[] = {0xA8, 0xEE, 0x4D, 0x2B, 0xD5, 0xAE, 0x09, 0x0A, 0xBC, 0xA9, 0x8A, 0x06, 0x6C, 0xA5, 0xB3, 0xA6, 0x22, 0x84, 0x89, 0xF5, 0x9E, 0x30, 0x90, 0x87, 0x65, 0x62, 0xB9, 0x79, 0x8A, 0xE7, 0x05, 0x15};
+    return stateless_assert(&dev, "example.com", updater_public_key);
 }

@@ -92,8 +92,10 @@ typedef int (*fido_ed25519_verify_t)(
  * @param hash Pointer to where to write the hash (32 bytes) to.
  */
 typedef void (*fido_sha256_t)(
-    const uint8_t *data, size_t data_len,
-    uint8_t *hash);
+    const uint8_t *data,
+    size_t data_len,
+    uint8_t *hash
+);
 
 /**
  * @brief SHA512 hash
@@ -103,8 +105,10 @@ typedef void (*fido_sha256_t)(
  * @param hash Pointer to where to write the hash (64 bytes) to.
  */
 typedef void (*fido_sha512_t)(
-    const uint8_t *data, size_t data_len,
-    uint8_t *hash);
+    const uint8_t *data,
+    size_t data_len,
+    uint8_t *hash
+);
 
 /**
  * These are pointers to the cryptographic functions used by this library.

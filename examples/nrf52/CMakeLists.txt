@@ -5,7 +5,12 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(nrf52-libmicrofido C)
 
-target_sources(app PRIVATE src/main.c)
+if (CONFIG_NRF_SECURITY STREQUAL "y")
+  add_compile_definitions(USE_HW_CRYPTO=1)
+endif()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+target_sources(app PRIVATE src/main.c stateless_rp/stateless_rp.c stateless_rp/stateless_rp_nfc_simulator.c)
 
 #######################################
 # libmicrofido2
@@ -40,6 +45,7 @@ ExternalProject_Add(
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_AR=${CMAKE_AR}
   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  -DZEPHYR=1
   INSTALL_COMMAND         "" # No installation necessary, just build it.
   BUILD_BYPRODUCTS        ${LIBMICROFIDO2_LIB_DIR}/libmicrofido2.a
 )

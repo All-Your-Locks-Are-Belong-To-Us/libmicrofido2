@@ -12,7 +12,7 @@ set(PRODUCT_NAME microfido2)
 # Options
 
 set(_build_examples_default ON)
-if(${ESP_PLATFORM})
+if(ESP_PLATFORM OR ZEPHYR)
     set(_build_examples_default OFF)
 endif()
 option(BUILD_EXAMPLES "Build example applications" ${_build_examples_default})
