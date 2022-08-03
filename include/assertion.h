@@ -54,6 +54,8 @@ typedef struct fido_cbor_credential {
     uint8_t id_length;                              // The length of the credential id.
 } fido_cbor_credential_t;
 
+// Flags returned by the authenticator in authenticatorData / authData
+// See https://www.w3.org/TR/webauthn-2/#sctn-authenticator-data
 // User Presence
 #define FIDO_AUTH_DATA_FLAGS_UP         BITFIELD(0)
 // User Verified
@@ -64,7 +66,6 @@ typedef struct fido_cbor_credential {
 #define FIDO_AUTH_DATA_FLAGS_ED         BITFIELD(7)
 typedef uint8_t fido_assert_auth_data_flags_t;
 
-// See https://www.w3.org/TR/webauthn-2/#sctn-authenticator-data
 typedef struct fido_assert_auth_data {
     uint8_t                           rp_id_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN];
     fido_assert_auth_data_flags_t     flags;
