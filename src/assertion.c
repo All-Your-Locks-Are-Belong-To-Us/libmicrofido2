@@ -12,6 +12,8 @@
 #include "utils.h"
 
 #define CBOR_ASSERT_WRITER_STATUS_OK(writer, function, ...) { function(&writer, __VA_ARGS__); if (!cbor_writer_is_ok(&writer)) { return FIDO_ERR_BUFFER_TOO_SHORT; } }
+#define GET_ASSERTION_MAX_COMMAND_BUFFER_LEN 256
+#define GET_ASSERTION_COMMAND_BUFFER_LEN_INCREMENT 32
 
 /**
  * @brief Encode assertion request into CBOR.
@@ -245,11 +247,27 @@ static int fido_dev_get_assert_tx(
     const es256_pk_t *pk,
     const fido_blob_t *ecdh
 ) {
-    // 32 > 1 byte command + 1 byte map header + 1 byte get key + max. 9 byte get value + 1 byte offset key + max. 9 byte offset value
-    int command_buffer_len = 1 + 1 + 1 + assert->rp_id.len + 1 + sizeof(assert->cdh) + 32;
-    uint8_t command_buffer[command_buffer_len];
+    // We do not know the size of the command buffer, yet, as extensions can have different length.
+    // So we start with a sane value and try our luck until the buffer is large enough.
+
+    // 1 byte command + 1 byte map header + maximum of 4 supported keys, 1 byte each + rpid (incl. max two bytes of cbor prefix) +
+    // client data hash (incl 2 bytes cbor prefix) + 9 bytes for options, 32 bytes for extensions.
+    int command_buffer_len = 1 + 1 + 4 + (assert->rp_id.len + 2) + sizeof(assert->cdh) + 9 + 32;
     int cbor_len;
     int ret;
+
+    // Test the required length.
+    {
+        uint8_t command_buffer[command_buffer_len];
+        while (
+            command_buffer_len < GET_ASSERTION_MAX_COMMAND_BUFFER_LEN &&
+            (cbor_len = build_get_assert_cbor(assert, command_buffer + 1, sizeof(command_buffer) - 1)) == FIDO_ERR_BUFFER_TOO_SHORT
+        ) {
+            command_buffer_len += GET_ASSERTION_COMMAND_BUFFER_LEN_INCREMENT;
+        }
+    }
+
+    uint8_t command_buffer[command_buffer_len];
 
     command_buffer[0] = CTAP_CBOR_ASSERT;
     if ((cbor_len = build_get_assert_cbor(assert, command_buffer + 1, sizeof(command_buffer) - 1)) <= 0) {
