@@ -395,7 +395,7 @@ void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t e
     assert->ext = extensions;
 }
 
-int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_opt_t assert_opt) {
+static int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_opt_t assert_opt) {
     int up = assert_opt & FIDO_ASSERT_OPTION_UP;
     int uv = assert_opt & FIDO_ASSERT_OPTION_UV;
     if (up == FIDO_ASSERT_OPTION_UP &&
@@ -413,7 +413,7 @@ int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_
     return (0);
 }
 
-int fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) {
+static int fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) {
     uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
     if(fido_sha256 == NULL) {
         return FIDO_ERR_INTERNAL;
@@ -435,7 +435,7 @@ int fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_ha
  * @param auth_data_length The length of the auth_data.
  * @return int The length written in the buffer, or an error < 0
  */
-int fido_get_signed_hash(
+static int fido_get_signed_hash(
     int cose_alg,
     uint8_t* buf,
     const uint8_t* client_data_hash,
