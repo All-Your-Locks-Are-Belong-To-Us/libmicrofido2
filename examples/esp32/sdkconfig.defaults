@@ -1,0 +1,6 @@
+# Increase stack size to not make it crash
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=10240
+
+# Set target to ESP32-C3
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_IDF_TARGET_ESP32C3=y
