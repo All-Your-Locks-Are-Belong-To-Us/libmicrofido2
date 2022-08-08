@@ -16,3 +16,9 @@ A small ESP-IDF app for the ESP32 using the libmicrofido2.
 
 1. Connect the ESP32 to your computer and find its device node at `/dev/ttyUSBX` (note the value of `X` and replace it in the following command).
 1. Run `docker run --rm -v $PWD/../../:/project -w /project/examples/esp32 --device /dev/ttyUSBX espressif/idf idf.py flash`.
+
+## Hardware Cryptography
+
+By default, hardware accelerated AES, partially AES-GCM, SHA-256, and SHA-512 are enabled.
+As of now (2022), the ESP32C3 does not have hardware support for Ed25519.
+To disable these, set `CONFIG_USE_HW_CRYPTO=n` in your `sdkconfig`.
