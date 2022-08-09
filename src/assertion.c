@@ -315,7 +315,7 @@ static int fido_dev_get_assert_rx(
 
     ret = cbor_iter_map(&map, &parse_get_assert_reply_entry, reply);
 out:
-    memset(msg, 0, msglen);
+    memset(msg, 0, dev->maxmsgsize);
     return ret;
 }
 
