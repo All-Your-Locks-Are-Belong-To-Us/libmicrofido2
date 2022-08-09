@@ -17,9 +17,10 @@
 #include "log.h"
 #endif
 
+#include "assertion.h"
+#include "crypto.h"
+#include "info.h"
 #include "io.h"
+#include "largeblob.h"
 #include "nfc.h"
 #include "param.h"
-#include "info.h"
-#include "largeblob.h"
-#include "crypto.h"
