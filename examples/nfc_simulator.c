@@ -7,6 +7,7 @@
  */
 
 #include "fido.h"
+#include "stateless_rp.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -227,54 +228,6 @@ int main(void) {
         return 1;
     }
 
-    // Open the device. This also gets the device info.
-    if (fido_dev_open(&dev) != FIDO_OK) {
-        return 2;
-    }
-
-    // Prepare assertion.
-    fido_assert_t assert;
-    fido_assert_reset(&assert);
-    const char *rpid = "example.com";
-    uint8_t client_data_hash[ASSERTION_CLIENT_DATA_HASH_LEN];
-    memset(client_data_hash, 42, sizeof(client_data_hash));
-    fido_assert_set_rp(&assert, rpid);
-    fido_assert_set_extensions(&assert, FIDO_ASSERT_EXTENSION_LARGE_BLOB_KEY);
-    fido_assert_set_client_data_hash(&assert, client_data_hash);
-
-    // Perform assertion. It is not verified yet, as this credential public key is unknown at this point in time.
-    if (fido_dev_get_assert(&dev, &assert) != FIDO_OK) {
-        return 3;
-    } else if (!assert.reply.has_large_blob_key) {
-        return 4;
-    }
-
-    // Read the per-credential large blob for this credential.
-    fido_blob_t blob;
-    uint8_t blob_buffer[1024] = {0};
-    fido_blob_reset(&blob, blob_buffer, sizeof(blob_buffer));
-    if (fido_dev_largeblob_get(&dev, assert.reply.large_blob_key, LARGEBLOB_KEY_SIZE, &blob) != FIDO_OK) {
-        return 5;
-    }
-
-    // blob = credential_public_key (32) | signature(credential_public_key) (64)
-    uint8_t *credential_public_key = blob.buffer;
-    uint8_t *credential_public_key_signature = blob.buffer + 32;
-    uint8_t updater_public_key[] = {0xA8, 0xEE, 0x4D, 0x2B, 0xD5, 0xAE, 0x09, 0x0A, 0xBC, 0xA9, 0x8A, 0x06, 0x6C, 0xA5, 0xB3, 0xA6, 0x22, 0x84, 0x89, 0xF5, 0x9E, 0x30, 0x90, 0x87, 0x65, 0x62, 0xB9, 0x79, 0x8A, 0xE7, 0x05, 0x15};
-
-    // Verify the signature of the credential public key stored in the large blob.
-    if(fido_ed25519_verify(credential_public_key_signature, updater_public_key, credential_public_key, 32) != 0) {
-        return 6;
-    }
-
-    // Now, verify the assertion with the public key from the large blob.
-    if (fido_assert_verify(&assert, COSE_ALGORITHM_EdDSA, credential_public_key) != FIDO_OK) {
-        return 7;
-    }
-
-    if (fido_dev_close(&dev) != FIDO_OK) {
-        return 8;
-    }
-
-    return 0;
+    const uint8_t updater_public_key[] = {0xA8, 0xEE, 0x4D, 0x2B, 0xD5, 0xAE, 0x09, 0x0A, 0xBC, 0xA9, 0x8A, 0x06, 0x6C, 0xA5, 0xB3, 0xA6, 0x22, 0x84, 0x89, 0xF5, 0x9E, 0x30, 0x90, 0x87, 0x65, 0x62, 0xB9, 0x79, 0x8A, 0xE7, 0x05, 0x15};
+    return stateless_assert(&dev, "example.com", updater_public_key);
 }
