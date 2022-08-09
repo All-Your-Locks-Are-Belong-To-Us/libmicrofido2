@@ -161,7 +161,7 @@ static int mock_read(void *handle, unsigned char *buf, const size_t len) {
     size_t rest_bytes = copy_len - read_offset;
 
     if (rest_bytes >= len - 2 /* 2 bytes status */) {
-        printf("Message of len %ld too large, need to read again!\n", rest_bytes);
+        printf("Message of len %zu too large, need to read again!\n", rest_bytes);
         memcpy(buf, copy_pointer + read_offset, len - 2);
         read_offset += len - 2;
         bytes_returned = len;
