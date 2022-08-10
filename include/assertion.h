@@ -95,7 +95,7 @@ typedef struct fido_assert {
 
 /**
  * @brief Reset an assertion request to a known state.
- * 
+ *
  * @param assert A pointer to the assertion data structure to reset.
  */
 void fido_assert_reset(fido_assert_t *assert);
@@ -133,11 +133,11 @@ void fido_assert_set_client_data_hash(fido_assert_t *assert, const uint8_t hash[
 
 /**
  * @brief Set the client data for an assertion.
- * 
+ *
  * Computes the (SHA256) hash from the given data and stores it in the assertion request.
- * 
+ *
  * Note: This should be non-predictable.
- * 
+ *
  * @param assert A pointer to an assertion request to set the client data hash on.
  * @param client_data A pointer to the client data buffer.
  * @param client_data_len The length of the client data.
@@ -162,10 +162,10 @@ void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t e
 
 /**
  * @brief Verify an assertion.
- * 
+ *
  * @param assert A pointer to an assertion request/reply struct.
  * @param cose_alg A COSE algorithm identifier.
  * @param pk The public key to verify the signature with.
- * @return int 
+ * @return int
  */
 int fido_assert_verify(const fido_assert_t *assert, const int cose_alg, const uint8_t *pk);
