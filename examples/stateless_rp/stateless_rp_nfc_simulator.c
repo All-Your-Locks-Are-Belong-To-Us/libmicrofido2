@@ -24,12 +24,12 @@
 #endif
 
 static void *mock_open() {
-    printf("open\n");
+    log("open\n");
     return (void*)1; // Just return a fake handle for this device.
 };
 
 static void mock_close(void *handle) {
-    printf("close\n");
+    log("close\n");
 }
 
 enum fido_state {
@@ -44,7 +44,7 @@ static enum fido_state sim_state = FIDO_STATE_UNINIT;
 static size_t read_offset = 0;
 
 static int mock_read(void *handle, unsigned char *buf, const size_t len) {
-    printf("trying to read %zu bytes\n", len);
+    log("trying to read %zu bytes\n", len);
     const uint8_t *copy_pointer = NULL;
     size_t copy_len = 0;
     switch (sim_state)
@@ -161,28 +161,28 @@ static int mock_read(void *handle, unsigned char *buf, const size_t len) {
     size_t rest_bytes = copy_len - read_offset;
 
     if (rest_bytes >= len - 2 /* 2 bytes status */) {
-        printf("Message of len %zu too large, need to read again!\n", rest_bytes);
+        log("Message of len %zu too large, need to read again!\n", rest_bytes);
         memcpy(buf, copy_pointer + read_offset, len - 2);
         read_offset += len - 2;
         bytes_returned = len;
         rest_bytes -= bytes_returned;
         buf[len - 2] = 0x61; // more data
         buf[len - 1] = rest_bytes > 0xff ? 0xff : rest_bytes; // those many bytes still available
-        printf("reading: ");
+        log("reading: ");
         for (size_t i = 0; i < len; ++i) {
-            printf("%02x ", buf[i]);
+            log("%02x ", buf[i]);
         }
-        putc('\n', stdout);
+        log("\n");
     } else {
         memcpy(buf, copy_pointer + read_offset, rest_bytes);
         buf[rest_bytes] = 0x90;
         buf[rest_bytes + 1] = 0x00;
         bytes_returned = rest_bytes + 2;
-        printf("reading: ");
+        log("reading: ");
         for (size_t i = 0; i < rest_bytes + 2; ++i) {
-            printf("%02x ", buf[i]);
+            log("%02x ", buf[i]);
         }
-        putc('\n', stdout);
+        log("\n");
     }
     return bytes_returned;
 }
@@ -191,15 +191,15 @@ static int mock_read(void *handle, unsigned char *buf, const size_t len) {
 
 static int mock_write(void *handle, const unsigned char *buf, const size_t len) {
     // Output the buffer.
-    printf("writing: ");
+    log("writing: ");
     for (size_t i = 0; i < len; ++i) {
-        printf("%02x ", buf[i]);
+        log("%02x ", buf[i]);
     }
-    putc('\n', stdout);
+    log("\n");
 
     if (buf[1] == NFC_GET_RESPONSE) {
         // Just continue with previous reading.
-        printf("Trying continue to read next %d bytes.\n", buf[4]);
+        log("Trying continue to read next %d bytes.\n", buf[4]);
         return (int)len;
     }
 
