@@ -1,0 +1,5 @@
+config MEASURE_ALGORITHM
+    string "Algorithm to measure (aes_gcm, ed25519, inflate, sha256, sha512)"
+	default n
+	help
+		Decides which of the algorithms aes_gcm, ed25519, inflate, sha256, sha512 should be measured.
