@@ -10,7 +10,12 @@ if (CONFIG_NRF_SECURITY STREQUAL "y")
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-target_sources(app PRIVATE src/main.c stateless_rp/stateless_rp.c stateless_rp/stateless_rp_nfc_simulator.c)
+target_sources(app PRIVATE
+  src/main.c
+  src/hw_crypto.c
+  stateless_rp/stateless_rp.c
+  stateless_rp/stateless_rp_nfc_simulator.c
+)
 
 #######################################
 # libmicrofido2
