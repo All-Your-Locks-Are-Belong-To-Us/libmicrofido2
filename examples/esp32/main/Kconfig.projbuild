@@ -1,0 +1,5 @@
+config USE_HW_CRYPTO
+	bool "Use hardware acceleration for cryptography and hashing"
+	default n
+	help
+		Decides whether FIDO operations will use hardware acceleration for cryptography and hashing (if possible)
