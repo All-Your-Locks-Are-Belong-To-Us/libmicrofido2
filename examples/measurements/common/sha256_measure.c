@@ -8,6 +8,11 @@
 
 #include "fido.h"
 #include "gpio.h"
+#include "hw_crypto.h"
+
+#ifdef ESP_PLATFORM
+  #include "sdkconfig.h"
+#endif
 
 #define SAMPLES 20
 
@@ -24,6 +29,10 @@ int main(void) {
     delay(3000);
 
     uint8_t hash[32] = {0};
+
+#ifdef CONFIG_USE_HW_CRYPTO
+    init_hw_crypto();
+#endif
 
     setup_pin();
     pin_off();

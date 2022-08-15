@@ -60,12 +60,19 @@ void delay(double ms) {
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "driver/gpio.h"
+#include <esp_cpu.h>
+#include <stdio.h>
+#include <driver/gpio.h>
+#include <sdkconfig.h>
 
 #define PIN 7
 #define LED_PIN 19
 #define LED_PIN_MASK (1ULL << LED_PIN)
 #define PIN_MASK (1ULL << PIN)
+
+#ifdef CONFIG_LOG_CYCLE_COUNT
+esp_cpu_cycle_count_t clock_cycle_start;
+#endif
 
 void setup_pin() {
     // zero-initialize the config structure.
@@ -94,11 +101,20 @@ void setup_pin() {
 
 void pin_on() {
     gpio_set_level(PIN, 1);
+    #ifdef CONFIG_LOG_CYCLE_COUNT
+    clock_cycle_start = esp_cpu_get_cycle_count();
+    #endif
     // We could disable the FreeRTOS interrupts for every run, but that seems to have no effect on the overall performance.
     // taskDISABLE_INTERRUPTS();
 }
 
 void pin_off() {
+    #ifdef CONFIG_LOG_CYCLE_COUNT
+    esp_cpu_cycle_count_t end = esp_cpu_get_cycle_count();
+    uint64_t took_cycles = end - clock_cycle_start;
+    printf("took %lld cycles\n", took_cycles);
+    #endif
+
     // taskENABLE_INTERRUPTS();
     gpio_set_level(PIN, 0);
 }
