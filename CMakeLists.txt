@@ -1,6 +1,7 @@
 #######################################
 # General
 cmake_minimum_required(VERSION 3.10)
+include(CMakeDependentOption)
 
 if(NOT DEFINED ESP_PLATFORM)
     project(libmicrofido2 C)
@@ -76,7 +77,7 @@ endif()
 #######################################
 # ESP IDF
 
-if(${ESP_PLATFORM})
+if(ESP_PLATFORM)
     idf_component_register(
         SRCS ${SRC_FILES}
         INCLUDE_DIRS ${libmicrofido2_include_dir}
@@ -87,37 +88,44 @@ if(${ESP_PLATFORM})
     unset(libmicrofido2_build_options)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT "include software AES GCM encryption" OFF)
+option(ENABLE_SOFTWARE_CRYPTO "disable building software cryptography algorithms" ON)
+
+if(ESP_PLATFORM AND CONFIG_USE_HW_CRYPTO)
+    set(ENABLE_SOFTWARE_CRYPTO OFF)
+endif()
+
+cmake_dependent_option(USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT "include software AES GCM encryption" ON "ENABLE_SOFTWARE_CRYPTO" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_AES_GCM_DECRYPT "include software AES GCM decryption" ON)
+cmake_dependent_option(USE_SOFTWARE_CRYPTO_AES_GCM_DECRYPT "include software AES GCM decryption" ON "ENABLE_SOFTWARE_CRYPTO" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_AES_GCM_DECRYPT)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_AES_GCM_DECRYPT)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_ED25519_SIGN "include software ed25519 signature generation" OFF)
+cmake_dependent_option(USE_SOFTWARE_CRYPTO_ED25519_SIGN "include software ed25519 signature generation" OFF "ENABLE_SOFTWARE_CRYPTO" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_ED25519_SIGN)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_ED25519_SIGN)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_ED25519_VERIFY "include software ed25519 signature verification" ON)
+cmake_dependent_option(USE_SOFTWARE_CRYPTO_ED25519_VERIFY "include software ed25519 signature verification" ON "ENABLE_SOFTWARE_CRYPTO" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_ED25519_VERIFY)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_ED25519_VERIFY)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_SHA256 "include software SHA256" ON)
+cmake_dependent_option(USE_SOFTWARE_CRYPTO_SHA256 "include software SHA256" ON "ENABLE_SOFTWARE_CRYPTO" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_SHA256)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA256)
 endif()
 
-option(USE_SOFTWARE_CRYPTO_SHA512 "include software SHA512" ON)
+cmake_dependent_option(USE_SOFTWARE_CRYPTO_SHA512 "include software SHA512" ON "ENABLE_SOFTWARE_CRYPTO" OFF)
 if(NOT USE_SOFTWARE_CRYPTO_SHA512)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA512)
 endif()
 
-option(USE_SOFTWARE_RNG "include software RNG" ON)
+# TODO: This should also be disabled when not using software crypto.
+cmake_dependent_option(USE_SOFTWARE_RNG "include software RNG" ON "ENABLE_SOFTWARE_CRYPTO" ON)
 if(NOT USE_SOFTWARE_RNG)
     add_compile_definitions(NO_SOFTWARE_RNG)
 endif()
@@ -126,30 +134,42 @@ endif()
 # External libraries
 
 # Add AES GCM library
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/aes_gcm)
+if(USE_SOFTWARE_CRYPTO_AES_GCM_ENCRYPT OR USE_SOFTWARE_CRYPTO_AES_GCM_DECRYPT)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/aes_gcm)
+    list(APPEND libmicrofido2_link_libs aes-gcm)
+endif()
 
 # Add cb0r library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/cb0r)
+list(APPEND libmicrofido2_link_libs cb0r)
+
 
 # Add SHA256 library
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/sha256)
+if(USE_SOFTWARE_CRYPTO_SHA256)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/sha256)
+    list(APPEND libmicrofido2_link_libs sha256)
+endif()
 
 # Add tinf library
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/tinf)
+list(APPEND libmicrofido2_link_libs tinf)
 
 # Add Monocypher library
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # Use -Os in debug build because otherwise it wouldn't fit on AVR.
-    target_compile_options(Monocypher PRIVATE -Os)
+if (USE_SOFTWARE_CRYPTO_ED25519_SIGN OR USE_SOFTWARE_CRYPTO_ED25519_VERIFY)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher)
+    target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        # Use -Os in debug build because otherwise it wouldn't fit on AVR.
+        target_compile_options(Monocypher PRIVATE -Os)
+    endif()
+    list(APPEND libmicrofido2_link_libs Monocypher)
 endif()
-target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
 
 # Link the object libraries
 if(${ESP_PLATFORM})
-    target_link_libraries(${COMPONENT_LIB} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC ${libmicrofido2_link_libs})
 else()
-    target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
+    target_link_libraries(${PRODUCT_NAME} PUBLIC ${libmicrofido2_link_libs})
 endif()
 
 #######################################
