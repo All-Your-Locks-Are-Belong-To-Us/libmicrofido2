@@ -1,11 +1,10 @@
 include(../../cmake/linker-map.cmake)
 
-set(measurement_dependencies gpio.c)
-
 function(add_measurement name)
-    add_executable(${name} "${name}.c" ${measurement_dependencies})
-    add_linker_map_for_target(${name})
-    target_link_libraries(${name} ${PRODUCT_NAME})
+  add_executable(${name} "common/${name}.c" common/gpio.c)
+  target_include_directories(${name} PRIVATE common/)
+  add_linker_map_for_target(${name})
+  target_link_libraries(${name} ${PRODUCT_NAME})
 endfunction()
 
 add_measurement("aes_gcm_measure")

@@ -31,6 +31,31 @@ void delay(double ms) {
     }
 }
 
+#elif defined(__ZEPHYR__)
+
+#include <zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+
+static struct device* dev;
+
+int setup_pin() {
+    dev = device_get_binding("GPIO_0");
+    gpio_pin_configure(dev, 27, GPIO_OUTPUT);
+}
+
+void pin_on() {
+    gpio_pin_set(dev, 27, 1);
+}
+
+void pin_off() {
+    gpio_pin_set(dev, 27, 0);
+}
+
+void delay(double ms) {
+    k_sleep(K_MSEC(ms));
+}
+
 #else
 // To make the examples compile, default to NOOP.
 #warning GPIO does not work on this system, defaulting to nop
