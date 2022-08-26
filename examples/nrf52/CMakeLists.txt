@@ -12,8 +12,8 @@ endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 target_sources(app PRIVATE
   src/main.c
-  src/clock_cycles.c
-  src/hw_crypto.c
+  clock/clock_cycles.c
+  hw_crypto/hw_crypto.c
   stateless_rp/stateless_rp.c
   stateless_rp/stateless_rp_nfc_simulator.c
 )
