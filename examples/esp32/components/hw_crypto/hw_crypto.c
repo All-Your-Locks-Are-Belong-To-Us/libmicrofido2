@@ -17,21 +17,21 @@
 #include <mbedtls/sha256.h>
 #include <mbedtls/sha512.h>
 
-void sha256(const uint8_t *data, size_t data_len, uint8_t *hash) {
+static void sha256(const uint8_t *data, size_t data_len, uint8_t *hash) {
     int r = mbedtls_sha256(data, data_len, hash, 0);
     if (r != 0) {
         printf("sha256 failed with %d\n", r);
     }
 }
 
-void sha512(const uint8_t *data, size_t data_len, uint8_t *hash) {
+static void sha512(const uint8_t *data, size_t data_len, uint8_t *hash) {
     int r = mbedtls_sha512(data, data_len, hash, 0);
     if (r != 0) {
         printf("sha512 failed with %d\n", r);
     }
 }
 
-int aes_gcm_encrypt(
+static int aes_gcm_encrypt(
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
     const uint8_t *plaintext, size_t plaintext_len,
@@ -68,7 +68,7 @@ int aes_gcm_encrypt(
     return 0;
 }
 
-int aes_gcm_decrypt(
+static int aes_gcm_decrypt(
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
     const uint8_t *ciphertext, size_t ciphertext_len,
