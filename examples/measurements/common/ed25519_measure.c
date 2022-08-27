@@ -8,6 +8,7 @@
 
 #include "fido.h"
 #include "gpio.h"
+#include "hw_crypto.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,9 +32,7 @@ int main(void) {
     // Wait until the microcontroller booted up to remove increased power consumption in the measurements at the beginning.
     delay(3000);
 
-#ifdef CONFIG_USE_HW_CRYPTO
     init_hw_crypto();
-#endif
 
     setup_pin();
     pin_off();
