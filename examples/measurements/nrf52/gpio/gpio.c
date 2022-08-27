@@ -6,33 +6,6 @@
  * license that can be found in the LICENSE file.
  */
 
-#if defined(__AVR__)
-
-#include <avr/io.h>
-#include <util/delay.h>
-
-#define PIN PB5
-
-void setup_pin() {
-    DDRB |= _BV(PIN);
-}
-
-void pin_on() {
-    PORTB |= _BV(PIN);
-}
-
-void pin_off() {
-    PORTB &= ~_BV(PIN);
-}
-
-void delay(double ms) {
-    for (double i = 0; i < ms; i++) {
-        _delay_ms(1);
-    }
-}
-
-#elif defined(__ZEPHYR__)
-
 #include <zephyr.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -55,12 +28,3 @@ void pin_off() {
 void delay(double ms) {
     k_sleep(K_MSEC(ms));
 }
-
-#else
-// To make the examples compile, default to NOOP.
-#warning GPIO does not work on this system, defaulting to nop
-void setup_pin() {}
-void pin_on() {}
-void pin_off() {}
-void delay(double ms) {}
-#endif

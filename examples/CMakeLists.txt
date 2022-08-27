@@ -13,4 +13,4 @@ target_link_libraries(nfc_simulator ${PRODUCT_NAME})
 #######################################
 # Test applications
 
-add_subdirectory(measurements)
+add_subdirectory(measurements/atmega)

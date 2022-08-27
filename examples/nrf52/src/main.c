@@ -13,8 +13,8 @@
 
 #include <fido.h>
 
-#include "clock_cycles.h"
-#include "hw_crypto.h"
+#include "clock/clock_cycles.h"
+#include "hw_crypto/hw_crypto.h"
 #include "stateless_rp/stateless_rp_nfc_simulator.h"
 #include "stateless_rp/stateless_rp.h"
 

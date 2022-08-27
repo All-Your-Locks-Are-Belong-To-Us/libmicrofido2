@@ -6,6 +6,8 @@
  * license that can be found in the LICENSE file.
  */
 
+#pragma once
+
 /**
  * @brief Setup the logical PPK2 output pin.
  */

@@ -19,7 +19,7 @@
 
 #ifdef USE_HW_CRYPTO
 
-void sha256(const uint8_t *data, size_t data_len, uint8_t *hash) {
+static void sha256(const uint8_t *data, size_t data_len, uint8_t *hash) {
     size_t olen; // We actually do not do anything with this parameter, but the API requires it.
     psa_status_t status = psa_hash_compute(
         PSA_ALG_SHA_256,
@@ -32,7 +32,7 @@ void sha256(const uint8_t *data, size_t data_len, uint8_t *hash) {
     assert(status == PSA_SUCCESS);
 }
 
-void sha512(const uint8_t *data, size_t data_len, uint8_t *hash) {
+static void sha512(const uint8_t *data, size_t data_len, uint8_t *hash) {
     size_t olen; // We actually do not do anything with this parameter, but the API requires it.
     psa_status_t status = psa_hash_compute(
         PSA_ALG_SHA_512,
@@ -45,7 +45,7 @@ void sha512(const uint8_t *data, size_t data_len, uint8_t *hash) {
     assert(status == PSA_SUCCESS);
 }
 
-int aes_gcm_encrypt(
+static int aes_gcm_encrypt(
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
     const uint8_t *plaintext, size_t plaintext_len,
@@ -111,7 +111,7 @@ out:
     return ret;
 }
 
-int aes_gcm_decrypt(
+static int aes_gcm_decrypt(
     const uint8_t *key, size_t key_len,
     const uint8_t *iv, size_t iv_len,
     const uint8_t *ciphertext, size_t ciphertext_len,
@@ -187,7 +187,7 @@ out:
     return ret;
 }
 
-void ed25519_sign(
+static void ed25519_sign(
     uint8_t *signature,
     const uint8_t *secret_key,
     const uint8_t *message,
@@ -243,7 +243,7 @@ out:
     assert(ret == 0);
 }
 
-int ed25519_verify(
+static int ed25519_verify(
     const uint8_t *signature,
     const uint8_t *public_key,
     const uint8_t *message,

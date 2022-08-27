@@ -15,3 +15,12 @@ Then, make sure to select the algorithm you want to measure in the `CMakeLists.t
 Finally, the build procedure is similar to the one in the [nrf52 example](../nrf52/README.md).
 To initially build the program, execute: `sudo docker run --rm -v $PWD/../../../:/libmicrofido2 nrf52-sdk west -v build -b nrf52840dk_nrf52840 -d /libmicrofido2/examples/measurements/nrf52/build /libmicrofido2/examples/measurements/nrf52`.
 To build the program and flash it, execute: `docker run --rm -v $PWD/../../../:/libmicrofido2 --privileged --device=/dev/ttyACM? nrf52-sdk west flash -d /libmicrofido2/examples/measurements/nrf52/build`.
+
+## Compiling for ESP32
+
+The examples must be compiled explicitly for the ESP32.
+
+First, navigate to the [esp32](./esp32/) folder.
+Then, make sure to select the algorithm you want to measure in the `sdkconfig` (or using `idf.py menuconfig`).
+Finally, the build procedure is similar to the one in the [esp32 example](../esp32/README.md).
+Therefore, to build and flash the program execute the following command from inside the [esp32](./esp32/) folder: `docker run --rm -v $PWD/../../../:/project -w /project/examples/measurements/esp32 --device /dev/ttyUSB0 espressif/idf idf.py flash`.

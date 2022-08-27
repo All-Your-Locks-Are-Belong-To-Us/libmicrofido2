@@ -1,0 +1,17 @@
+config MEASURE_ALGORITHM
+    string "Algorithm to measure (aes_gcm, ed25519, inflate, sha256, sha512)"
+	default n
+	help
+		Decides which of the algorithms aes_gcm, ed25519, inflate, sha256, sha512 should be measured.
+
+config LOG_CYCLE_COUNT
+    bool "Log the amount of CPU cycles it took to Serial"
+	default n
+	help
+		Decides, whether the amount of CPU cycles the cryptographic/hash operation took should be measured and printed to Serial out.
+
+config USE_HW_CRYPTO
+	bool "Use hardware acceleration for cryptography and hashing"
+	default n
+	help
+		Decides whether FIDO operations will use hardware acceleration for cryptography and hashing (if possible)
