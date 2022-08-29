@@ -2,7 +2,11 @@
 # General
 cmake_minimum_required(VERSION 3.10)
 
-if(NOT DEFINED ESP_PLATFORM)
+if(IDF_TARGET)
+    set(ESP_FRAMEWORK 1)
+endif()
+
+if(NOT DEFINED ESP_FRAMEWORK)
     project(libmicrofido2 C)
 endif()
 
@@ -12,7 +16,7 @@ set(PRODUCT_NAME microfido2)
 # Options
 
 set(_build_examples_default ON)
-if(ESP_PLATFORM OR ZEPHYR)
+if(ESP_PLATFORM OR ESP_FRAMEWORK OR ZEPHYR)
     set(_build_examples_default OFF)
 endif()
 option(BUILD_EXAMPLES "Build example applications" ${_build_examples_default})
@@ -46,12 +50,12 @@ set(libmicrofido2_include_dir
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-if(NOT DEFINED ESP_PLATFORM)
+if(NOT DEFINED ESP_FRAMEWORK)
     include_directories(${libmicrofido2_include_dir})
     add_library(${PRODUCT_NAME} STATIC ${SRC_FILES})
 endif()
 
-if(NOT DEFINED ESP_PLATFORM)
+if(NOT DEFINED ESP_FRAMEWORK)
     add_compile_options(
         ${libmicrofido2_compile_options}
     )
@@ -69,14 +73,14 @@ set(libmicrofido2_external_lib_include_dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/external/Monocypher/include
 )
 
-if(NOT DEFINED ESP_PLATFORM)
+if(NOT DEFINED ESP_FRAMEWORK)
     include_directories(${libmicrofido2_external_lib_include_dirs})
 endif()
 
 #######################################
 # ESP IDF
 
-if(${ESP_PLATFORM})
+if(ESP_FRAMEWORK)
     idf_component_register(
         SRCS ${SRC_FILES}
         INCLUDE_DIRS ${libmicrofido2_include_dir}
@@ -141,7 +145,7 @@ endif()
 target_compile_definitions(Monocypher PRIVATE PERIODICALLY_RESET_WATCHDOG)
 
 # Link the object libraries
-if(${ESP_PLATFORM})
+if(ESP_FRAMEWORK)
     target_link_libraries(${COMPONENT_LIB} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
 else()
     target_link_libraries(${PRODUCT_NAME} PUBLIC aes-gcm cb0r sha256 tinf Monocypher)
