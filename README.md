@@ -20,13 +20,22 @@ It is heavily inspired by the [`libfido2`](https://github.com/Yubico/libfido2) a
 
 ## Building
 
-Building the library depends on the framework you use for your microcontroller.
-We provide examples for the [ESP-32 using ESP-IDF](examples/esp32/) and the [nRF52 using Zephyr](examples/nrf52/).
+The build system is based on `cmake >= 3.10`.
 
-In case you only want to build a static library and use that later for linking, proceed as follows.
-Use one of the provided toolchain files (currently only for the ATmega, see [#37](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/37)).
+### Desktops
 
-You need to install `cmake >= 3.10`. Having done that you can do:
+You can build the library for desktops (we tested Linux and macOS):
+
+```bash
+mkdir -p build && cd build
+cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=Debug # Or Release
+make -j
+```
+
+### Using Toolchains (AVR-only)
+
+Currently, we only provide a toolchain file for the ATmega (see [#37](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/37)).
+With that, you can easily build the library as a static library as follows:
 
 ```bash
 mkdir -p build && cd build
@@ -37,13 +46,10 @@ cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCM
 make -j
 ```
 
-Similarily, you can build the library for desktops (we tested Linux and macOS) by omitting the `CMAKE_TOOLCHAIN_FILE` option:
+### Other Systems
 
-```bash
-mkdir -p build && cd build
-cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=Debug # Or Release
-make -j
-```
+Building the library for other systems depends on the framework you use for your microcontroller.
+We provide examples for the [ESP-32 using ESP-IDF](examples/esp32/) and the [nRF52 using Zephyr](examples/nrf52/).
 
 ## Usage
 
