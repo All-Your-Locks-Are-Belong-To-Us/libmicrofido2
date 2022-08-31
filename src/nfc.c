@@ -19,6 +19,14 @@ static const uint8_t aid[]                                  = { 0xa0, 0x00, 0x00
 static const uint8_t fido_version_u2f[] PROGMEM_MARKER      = "U2F_V2";
 static const uint8_t fido_version_fido2[] PROGMEM_MARKER    = "FIDO_2_0";
 
+/**
+ * @brief Receive the data from the CTAP init command.
+ *
+ * @param dev The device to receive data from.
+ * @param buf The buffer to write the received data to.
+ * @param len The length of the buffer.
+ * @return int FIDO_OK if the operation was successful.
+ */
 static int rx_init(fido_dev_t *dev, unsigned char *buf, const size_t len)
 {
     fido_ctap_info_t *attr = (fido_ctap_info_t *)buf;
@@ -54,11 +62,20 @@ static int rx_init(fido_dev_t *dev, unsigned char *buf, const size_t len)
     return (int)len;
 }
 
-static int rx_apdu(fido_dev_t *d, uint8_t sw[2], unsigned char **buf, size_t *count) {
+/**
+ * @brief Receive an NFC APDU.
+ *
+ * @param dev The device to receive data from.
+ * @param sw The buffer to write the status word to.
+ * @param buf A pointer to a pointer to a buffer where the received data is located. The pointer to the buffer will be advanced.
+ * @param count The remaining length of the buffer, will be reduced.
+ * @return int FIDO_OK if the operation was successful.
+ */
+static int rx_apdu(fido_dev_t *dev, uint8_t sw[2], unsigned char **buf, size_t *count) {
     uint8_t f[256 + 2];
     int n, ok = -1;
 
-    if ((n = d->io.read(d->io_handle, f, sizeof(f))) < 2) {
+    if ((n = dev->io.read(dev->io_handle, f, sizeof(f))) < 2) {
         fido_log_debug("%s: read", __func__);
         goto fail;
     }
@@ -77,7 +94,14 @@ fail:
     return ok;
 }
 
-static int tx_get_response(fido_dev_t *d, uint8_t count)
+/**
+ * @brief Transmit a GET_RESPONSE APDU.
+ *
+ * @param dev The device to transmit data to.
+ * @param count The amount of data expected to receive.
+ * @return int FIDO_OK if the operation was successful.
+ */
+static int tx_get_response(fido_dev_t *dev, uint8_t count)
 {
     uint8_t apdu[5];
 
@@ -85,7 +109,7 @@ static int tx_get_response(fido_dev_t *d, uint8_t count)
     apdu[1] = 0xc0; /* GET_RESPONSE */
     apdu[4] = count;
 
-    if (d->io.write(d->io_handle, apdu, sizeof(apdu)) < 0) {
+    if (dev->io.write(dev->io_handle, apdu, sizeof(apdu)) < 0) {
         fido_log_debug("%s: write", __func__);
         return FIDO_ERR_TX;
     }
@@ -93,9 +117,18 @@ static int tx_get_response(fido_dev_t *d, uint8_t count)
     return FIDO_OK;
 }
 
-static int rx_msg(fido_dev_t *dev, unsigned char *buf, const size_t bufsiz) {
+/**
+ * @brief Receive a complete message from the authenticator.
+ *        This includes logic for receiving NFC frames until no more data is available.
+ *
+ * @param dev The device to receive data from.
+ * @param buf The buffer to write the received data to.
+ * @param len The length of the buffer.
+ * @return int The amount of bytes received.
+ */
+static int rx_msg(fido_dev_t *dev, unsigned char *buf, const size_t len) {
     uint8_t sw[2];
-    size_t count = bufsiz;
+    size_t count = len;
 
     if (rx_apdu(dev, sw, &buf, &count) < 0) {
         fido_log_debug("%s: preamble", __func__);
@@ -116,14 +149,24 @@ static int rx_msg(fido_dev_t *dev, unsigned char *buf, const size_t bufsiz) {
     }
 
     // TODO bufsiz - count > INT_MAX
-    if (bufsiz < count) {
-        fido_log_debug("%s: bufsiz", __func__);
+    if (len < count) {
+        fido_log_debug("%s: len", __func__);
         return FIDO_ERR_RX;
     }
 
-    return (int)(bufsiz - count);
+    return (int)(len - count);
 }
 
+/**
+ * @brief Receive the CBOR message from the authenticator.
+ *        This removes the status word (2 bytes) from the received bytes such that only the CBOR
+ *        encoded message remains.
+ *
+ * @param dev The device to receive data from.
+ * @param buf The buffer to write the received data to.
+ * @param len The length of the buffer.
+ * @return int FIDO_OK if the operation was successful.
+ */
 static int rx_cbor(fido_dev_t *dev, unsigned char *buf, const size_t count) {
     int r;
 
@@ -133,6 +176,15 @@ static int rx_cbor(fido_dev_t *dev, unsigned char *buf, const size_t count) {
     return r - 2;
 }
 
+/**
+ * @brief Receive data from an NFC device according to the executed CTAP command.
+ *
+ * @param dev The device to receive data from.
+ * @param cmd The CTAP command that was executed.
+ * @param buf The buffer to write the response to.
+ * @param len The length of the buffer.
+ * @return int FIDO_OK if the operation was successful.
+ */
 static int nfc_rx(struct fido_dev *dev, const uint8_t cmd, unsigned char *buf, const size_t len) {
     switch (cmd) {
     case CTAP_CMD_INIT:
@@ -147,6 +199,16 @@ static int nfc_rx(struct fido_dev *dev, const uint8_t cmd, unsigned char *buf, c
     }
 }
 
+/**
+ * @brief Transmit a short ISO7816 APDU.
+ *
+ * @param dev The device to receive data from.
+ * @param h The ISO7816 header to send.
+ * @param payload The payload to send.
+ * @param payload_len The length of the payload.
+ * @param cla_flags The ISO7816 class flags to use.
+ * @return int FIDO_OK if the operation was successful.
+ */
 static int tx_short_apdu(
     fido_dev_t *dev,
     const iso7816_header_t *h,
@@ -193,6 +255,13 @@ fail:
     return ok;
 }
 
+/**
+ * @brief Transmit a complete ISO7816 APDU. Currently this is implemented through repeated short APDUs.
+ *
+ * @param dev The device to receive data from.
+ * @param apdu The ISO7816 APDU to send.
+ * @return int FIDO_OK if the operation was successful.
+ */
 static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
     uint16_t apdu_len = apdu->payload_len;
 
@@ -215,6 +284,15 @@ static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
     return FIDO_OK;
 }
 
+/**
+ * @brief Transmit an ISO7816 frame according to the desired CTAP command.
+ *
+ * @param dev The device to transmit data to.
+ * @param cmd The CTAP command.
+ * @param buf The payload to send.
+ * @param len The length of the payload.
+ * @return int FIDO_OK if the operation was successful.
+ */
 static int nfc_tx(struct fido_dev *dev, const uint8_t cmd, const unsigned char *buf, const size_t len) {
     iso7816_apdu_t apdu;
     int status = FIDO_ERR_TX;

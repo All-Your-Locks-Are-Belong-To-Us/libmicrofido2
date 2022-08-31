@@ -28,7 +28,7 @@ typedef int cbor_parse_map_item(const cb0r_t key, const cb0r_t value, void *data
  * @param cbor_map The map to iterate over.
  * @param cb The callback to call for each entry.
  * @param data User-supplied additional context data passed to the callback.
- * @return int FIDO_OK if map could be iterated completely.
+ * @return int FIDO_OK if the map could be iterated completely.
  */
 int cbor_iter_map(cb0r_t cbor_map, cbor_parse_map_item *cb, void *data);
 
@@ -38,7 +38,7 @@ int cbor_iter_map(cb0r_t cbor_map, cbor_parse_map_item *cb, void *data);
  * @param cbor_array The array to iterate over.
  * @param cb The callback to call for each entry.
  * @param data User-supplied additional context data passed to the callback.
- * @return int FIDO_OK if array could be iterated completely.
+ * @return int FIDO_OK if the array could be iterated completely.
  */
 int cbor_iter_array(cb0r_t cbor_array, cbor_parse_array_item *cb, void* data);
 
@@ -88,7 +88,7 @@ void cbor_writer_reset(cbor_writer_t writer, uint8_t* buffer, const size_t buffe
  * @brief Check a writer's status.
  *
  * @param writer The writer to check.
- * @return true iff no error occurred and writer->buffer can be used.
+ * @return true if no error occurred and writer->buffer can be used.
  */
 bool cbor_writer_is_ok(cbor_writer_t writer);
 

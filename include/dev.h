@@ -80,7 +80,7 @@ void fido_dev_set_transport(fido_dev_t *dev, const fido_dev_transport_t *transpo
  * Initializes the connection and makes it ready for communication.
  *
  * @param dev A pointer to the FIDO device to be opened.
- * @return intFIDO_OK when the operation was successful.
+ * @return intFIDO_OK if the operation was successful.
  */
 int fido_dev_open(fido_dev_t *dev);
 
@@ -90,7 +90,7 @@ int fido_dev_open(fido_dev_t *dev);
  * Closes the connection to the device.
  *
  * @param dev A pointer to the FIDO device to be closed.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 int fido_dev_close(fido_dev_t *dev);
 

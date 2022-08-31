@@ -96,6 +96,13 @@ bool cbor_writer_is_ok(cbor_writer_t writer) {
     return writer->status == CBOR_WRITER_OK;
 }
 
+/**
+ * @brief Return whether the CBOR writer can advance.
+ *
+ * @param writer The CBOR writer object.
+ * @param count The amount of bytes to advance the writer
+ * @return bool whether the writer can advance
+ */
 static bool cbor_writer_can_advance(cbor_writer_t writer, const size_t count) {
     if(count > writer->buffer_len - writer->length || writer->status != CBOR_WRITER_OK) {
         return false;
@@ -103,6 +110,13 @@ static bool cbor_writer_can_advance(cbor_writer_t writer, const size_t count) {
     return true;
 }
 
+/**
+ * @brief Ensure that the writer can advance and advance if possible. Otherwise set the writer status.
+ *
+ * @param writer The CBOR writer object.
+ * @param count The amount of bytes to advance the writer
+ * @return bool whether the writer can advance
+ */
 static void cbor_writer_advance(cbor_writer_t writer, const size_t count) {
     if(cbor_writer_can_advance(writer, count)) {
         writer->length += count;
@@ -112,6 +126,14 @@ static void cbor_writer_advance(cbor_writer_t writer, const size_t count) {
     }
 }
 
+/**
+ * @brief Write a CBOR value using the writer.
+ *
+ * @param writer The CBOR writer object.
+ * @param type The CBOR type of the data to write.
+ * @param value The value to write.
+ * @return size_t the amount of bytes written.
+ */
 static size_t cbor_write(cbor_writer_t writer, cb0r_e type, const uint64_t value) {
     size_t encoded_len = cbor_encoded_len(value);
     if(!cbor_writer_can_advance(writer, encoded_len)) {
