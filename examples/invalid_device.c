@@ -7,13 +7,15 @@
  */
 
 #include "fido.h"
+#include "assert.h"
 
 int main(void) {
     fido_dev_t device;
     fido_dev_init(&device);
     
     // This should fail because the io and transport functions are not set for the device.
-    fido_dev_open(&device);
+    int r = fido_dev_open(&device);
+    assert(r != FIDO_OK);
 
     // Always close your devices.
     fido_dev_close(&device);
