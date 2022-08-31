@@ -33,6 +33,15 @@ mkdir -p build && cd build
 cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCMAKE_BUILD_TYPE=Debug
 # for AVR8 Release builds
 cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCMAKE_BUILD_TYPE=Release
+make -j
+```
+
+Similarily, you can build the library for desktops (we tested Linux and macOS) by omitting the `CMAKE_TOOLCHAIN_FILE` option:
+
+```bash
+mkdir -p build && cd build
+cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=Debug # Or Release
+make -j
 ```
 
 ## Usage
