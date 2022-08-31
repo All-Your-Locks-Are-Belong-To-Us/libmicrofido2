@@ -114,6 +114,7 @@ static const uint8_t KEY_ID[] PROGMEM_MARKER = "id";
 
 /**
  * @brief CBOR decode the credential's data such as its type and ID.
+ *        See https://w3c.github.io/webauthn/#dictdef-publickeycredentialdescriptor
  *
  * @param key The CBOR key.
  * @param assert The CBOR value.

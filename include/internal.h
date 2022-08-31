@@ -33,7 +33,7 @@ int fido_rx(fido_dev_t *d, const uint8_t cmd, void *buf, const size_t len);
  * @param cmd The CTAP command to transmit.
  * @param buf A pointer to the source buffer.
  * @param len The size of the source buffer.
- * @return int FIDO_OK if the operation was successful.
+ * @return int FIDO_OK if the write operation was successful.
  */
 int fido_tx(fido_dev_t *d, const uint8_t cmd, const void *buf, const size_t len);
 int fido_get_random(void *buf, size_t len);
