@@ -1,9 +1,29 @@
 # libmicrofido2 - Minimal FIDO2 Library for Microcontrollers
 
-The **libmicrofido2** is a minimal FIDO2 library that is designed to be used in microcontrollers.
+**libmicrofido2** is a minimal FIDO2 library that is designed to be used in microcontrollers.
 It is heavily inspired by the [`libfido2`](https://github.com/Yubico/libfido2) and aims to have a similar API.
 
+## Features
+
+- **No heap allocations**: All structures are allocated on the stack.
+- **Physical layer agnostic**: The transport layer is left mostly to the user, so regardless of whether you want to use USB, NFC, or any other technology you can use this library. While we implemented the base layer for NFC, this can be easily implemented for other physical layers as well.
+- **Fully customizable cryptographic algorithms**: All of the cryptographic algorithms (Ed25519, AES GCM, SHA256, SHA512) can be replaced by the user entirely to enable hardware acceleration (see <examples/nrf52/hw_crypto/hw_crypto.c>).
+
+## Limitations
+
+- Random Number Generation is currently not implemented. ([#42](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/42))
+- The large blob currently cannot be written. ([#43](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/43))
+- Only a minimal subset of the CTAP 2.1 commands are supported (`authenticatorGetInfo`, `authenticatorLargeBlobs`, `authenticatorGetAssertion`).
+- Only a minimal subset of cryptographic algorithms specified in the FIDO2 standard supported. For signature verification, only Ed25519 is supported.
+- Variable length fields and fields with arbitrary values (like the extension field in `authenticatorGetInfo`) are not supported. Instead, these fields are parsed into statically allocatable structures (see [`info.h`](include/info.h) and [`info.c`](src/info.c) for examples of this).
+
 ## Building
+
+Building the library depends on the framework you use for your microcontroller.
+We provide examples for the [ESP-32 using ESP-IDF](examples/esp32/) and the [nRF52 using Zephyr](examples/nrf52/).
+
+In case you only want to build a static library and use that later for linking, proceed as follows.
+Use one of the provided toolchain files (currently only for the ATmega, see [#37](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/37)).
 
 You need to install `cmake >= 3.10`. Having done that you can do:
 
@@ -15,9 +35,20 @@ cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCM
 cmake .. -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_TOOLCHAIN_FILE=../avr.toolchain -DCMAKE_BUILD_TYPE=Release
 ```
 
+## Usage
+
+We provide fairly extensive examples of using this library in the [examples](examples/) directory.
+Most of the time, you'll only need to [`#include <fido.h>`](include/fido.h) as that file includes most of the others.
+In case you want to overwrite the implementation of the cryptographic algorithms, also checkout the [`crypto.h`](include/crypto.h) and [`random.h`](include/random.h) files.
+
+## Development
+
+We are happy to receive any PRs that further improve this library.
+In case you want to modify the library for your needs, checkout [`DEVELOPMENT.md`](DEVELOPMENT.md).
+
 ## Acknowledgements
 
-This library uses code from:
+This library references code from:
 
 - [`cb0r`](https://github.com/quartzjer/cb0r), licensed under the Unlicense.
 - [`libfido2`](https://github.com/Yubico/libfido2), licensed under the BSD-2-Clause license.
