@@ -1,0 +1,40 @@
+## ESP Chip Configuration
+# 20Mhz, this should match the crystal on your board,
+set(F_CPU 160000000UL)
+# CPU, you can find the list here:
+
+set(ESP_PLATFORM 1)
+
+set(ARCH rv32im)
+
+# Use ESP GCC toolchain
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_CXX_COMPILER riscv32-esp-elf-g++)
+set(CMAKE_C_COMPILER riscv32-esp-elf-gcc)
+set(CMAKE_ASM_COMPILER riscv32-esp-elf-gcc)
+
+add_definitions(
+    -DF_CPU=${F_CPU}
+)
+
+add_definitions(
+    -DESP_PLATFORM
+)
+
+set(CMAKE_EXE_LINKER_FLAGS "-march=${ARCH} -Wl,--gc-sections")
+add_compile_options(
+    -march=${ARCH} # MCU
+)
+
+# project(libmicrofido2)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+
+# search headers and libraries in the target environment
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+set(sdkconfig ${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig)
+set(config_dir ${CMAKE_CURRENT_SOURCE_DIR}/config)
+
+include_directories($ENV{IDF_PATH}/components/newlib/platform_include ${CMAKE_CURRENT_SOURCE_DIR}/platform/esp32/)
