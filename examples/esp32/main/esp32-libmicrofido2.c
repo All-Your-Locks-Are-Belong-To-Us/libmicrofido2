@@ -30,7 +30,7 @@ int app_main(void) {
     clock_start_counting();
     const int ret = stateless_assert(&dev, "example.com", updater_public_key);
     uint64_t elapsed_cycles = clock_stop_counting();
-    printf("Elapsed cycles for stateless assertion: %zu\n", elapsed_cycles);
-    printf("Elapsed nanoseconds for stateless assertion: %zu\n", clock_cyles_to_ns(elapsed_cycles));
+    printf("Elapsed cycles for stateless assertion: %llu\n", elapsed_cycles);
+    printf("Elapsed nanoseconds for stateless assertion: %lu\n", clock_cyles_to_ns(elapsed_cycles));
     return ret;
 }
