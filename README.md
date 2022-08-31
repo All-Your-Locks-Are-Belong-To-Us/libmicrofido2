@@ -7,10 +7,11 @@ It is heavily inspired by the [`libfido2`](https://github.com/Yubico/libfido2) a
 
 - **No heap allocations**: All structures are allocated on the stack.
 - **Physical layer agnostic**: The transport layer is left mostly to the user, so regardless of whether you want to use USB, NFC, or any other technology you can use this library. While we implemented the base layer for NFC, this can be easily implemented for other physical layers as well.
-- **Fully customizable cryptographic algorithms**: All of the cryptographic algorithms (Ed25519, AES GCM, SHA256, SHA512) can be replaced by the user entirely to enable hardware acceleration (see <examples/nrf52/hw_crypto/hw_crypto.c>).
+- **Fully customizable cryptographic algorithms**: All of the cryptographic algorithms (Ed25519, AES GCM, SHA256, SHA512) can be replaced by the user entirely to enable hardware acceleration (see [examples/nrf52/hw_crypto/hw_crypto.c](examples/nrf52/hw_crypto/hw_crypto.c)).
 
 ## Limitations
 
+- We chose the cryptographic library implementations that papers say were the fastest, as that was what mattered to us the most. However, we have not evaluated their security regarding attacks such as side-channel attacks.
 - Random Number Generation is currently not implemented. ([#42](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/42))
 - The large blob currently cannot be written. ([#43](https://github.com/All-Your-Locks-Are-Belong-To-Us/libmicrofido2/issues/43))
 - Only a minimal subset of the CTAP 2.1 commands are supported (`authenticatorGetInfo`, `authenticatorLargeBlobs`, `authenticatorGetAssertion`).
