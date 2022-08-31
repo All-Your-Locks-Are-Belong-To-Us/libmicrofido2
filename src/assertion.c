@@ -384,7 +384,7 @@ static int fido_dev_get_assert_wait(
 
     if ((r = fido_dev_get_assert_tx(dev, assert)) != FIDO_OK ||
         (r = fido_dev_get_assert_rx(dev, assert, reply)) != FIDO_OK)
-        return (r);
+        return r;
 
     return FIDO_OK;
 }
@@ -460,16 +460,16 @@ static int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_
     if (up == FIDO_ASSERT_OPTION_UP &&
         ((auth_data_flags & FIDO_AUTH_DATA_FLAGS_UP) == FIDO_AUTH_DATA_FLAGS_UP) == 0) {
         fido_log_debug("%s: CTAP_AUTHDATA_USER_PRESENT", __func__);
-        return (-1); /* user not present */
+        return -1; /* user not present */
     }
 
     if (uv == FIDO_ASSERT_OPTION_UV &&
         ((auth_data_flags & FIDO_AUTH_DATA_FLAGS_UV) == FIDO_AUTH_DATA_FLAGS_UV) == 0) {
         fido_log_debug("%s: CTAP_AUTHDATA_USER_VERIFIED", __func__);
-        return (-1); /* user not verified */
+        return -1; /* user not verified */
     }
 
-    return (0);
+    return 0;
 }
 
 /**

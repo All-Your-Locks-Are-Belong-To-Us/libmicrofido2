@@ -24,3 +24,4 @@
 #include "largeblob.h"
 #include "nfc.h"
 #include "param.h"
+#include "random.h"
