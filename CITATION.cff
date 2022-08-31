@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: >-
+  A Minimal FIDO2 Library for Microcontrollers
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+date-released: 2022-08-31
+authors:
+  - given-names: Felix
+    family-names: Gohla
+    email: felix.gohla@student.hpi.de
+  - given-names: Konrad
+    family-names: Hanff
+    email: konrad.hanff@student.hpi.de
+  - given-names: Tobias
+    family-names: Kantusch
+    email: tobias.kantusch@student.hpi.de
+  - given-names: Quentin
+    family-names: Kuth
+    email: quentin.kuth@student.hpi.de
+  - given-names: Felix
+    family-names: Roth
+    email: felix.roth@student.hpi.de
