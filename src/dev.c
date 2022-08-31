@@ -96,7 +96,7 @@ static int fido_dev_open_tx(fido_dev_t *dev) {
     /*
     if (dev->x != NULL) {
         fido_log_debug("%s: handle=%p", __func__, dev->io_handle);
-        return (FIDO_ERR_INVALID_ARGUMENT);
+        return FIDO_ERR_INVALID_ARGUMENT;
     }*/
 
     if (dev->io.open == NULL || dev->io.close == NULL) {

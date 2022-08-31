@@ -17,7 +17,7 @@ int fido_tx(fido_dev_t *d, const uint8_t cmd, const void *buf, const size_t len)
 
     if (d->io_handle == NULL || d->io.write == NULL || d->transport.tx == NULL || len > UINT16_MAX) {
         fido_log_debug("%s: invalid argument", __func__);
-        return (FIDO_ERR_INVALID_ARGUMENT);
+        return FIDO_ERR_INVALID_ARGUMENT;
     }
 
     return d->transport.tx(d, cmd, buf, len);
@@ -29,7 +29,7 @@ int fido_rx(fido_dev_t *d, const uint8_t cmd, void *buf, const size_t len) {
 
     if (d->io_handle == NULL || d->io.read == NULL || d->transport.rx == NULL || len > UINT16_MAX) {
         fido_log_debug("%s: invalid argument", __func__);
-        return (FIDO_ERR_INVALID_ARGUMENT);
+        return FIDO_ERR_INVALID_ARGUMENT;
     }
 
     // Values below 0 are errors.
