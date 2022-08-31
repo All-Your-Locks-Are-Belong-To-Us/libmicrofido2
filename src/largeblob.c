@@ -278,6 +278,15 @@ typedef struct largeblob_array_entry {
     uint64_t origSize;
 } largeblob_array_entry_t;
 
+/**
+ * @brief Uncompress the compressed data using tinf and store it in the provided buffer.
+ *
+ * @param out Pointer to a buffer to store the uncompressed data to.
+ * @param compressed Pointer to the compressed data.
+ * @param compressed_len Length of the compressed data.
+ * @param uncompressed_len_expected Expected length of the uncompressed data, to ensure that we got everything.
+ * @return int FIDO_OK when the operation was successful.
+ */
 static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compressed_len, size_t uncompressed_len_expected) {
     uint32_t uncompressed_len_actual = out->max_length;
     if(out->max_length < uncompressed_len_expected) {
@@ -291,6 +300,14 @@ static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compres
     return FIDO_OK;
 }
 
+/**
+ * @brief Parse an entry in the largeblob array.
+ *
+ * @param key The CBOR key value of the entry.
+ * @param value The CBOR encoded value.
+ * @param data The largeblob array entry object to store the parsed data to.
+ * @return int FIDO_OK when the operation was successful.
+ */
 static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
     largeblob_array_entry_t *entry = (largeblob_array_entry_t*) data;
 
@@ -339,6 +356,14 @@ static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
     }
 }
 
+/**
+ * @brief Iterate the largeblob array and check if we find an entry that matches the expected key,
+ *        uncompress the data if we find an entry.
+ *
+ * @param value The CBOR encoded value.
+ * @param data The largeblob array lookup parameters. This also contains the buffer where we write the uncompressed data to.
+ * @return int FIDO_OK when the operation was successful.
+ */
 static int largeblob_array_lookup(cb0r_t value, void* data) {
     largeblob_array_lookup_param_t *param = (largeblob_array_lookup_param_t*) data;
     largeblob_array_entry_t entry;

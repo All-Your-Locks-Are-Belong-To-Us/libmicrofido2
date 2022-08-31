@@ -14,6 +14,12 @@
 static int nonce = 1234; // The only cryptographically secure nonce
 
 
+/**
+ * @brief Store extensions received from the authenticator in the device object.
+ *
+ * @param dev The FIDO device to store the attributes in.
+ * @param info The parsed info received from the authenticator.
+ */
 static void fido_dev_set_extension_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
     if (info->extensions & FIDO_EXTENSION_CRED_PROTECT) {
         dev->flags |= FIDO_DEV_CRED_PROT;
@@ -23,6 +29,12 @@ static void fido_dev_set_extension_flags(fido_dev_t *dev, const fido_cbor_info_t
     }
 }
 
+/**
+ * @brief Store options received from the authenticator in the device object.
+ *
+ * @param dev The FIDO device to store the attributes in.
+ * @param info The parsed info received from the authenticator.
+ */
 static void fido_dev_set_option_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
     if(info->options & FIDO_OPTION_CLIENT_PIN) {
         dev->flags |= FIDO_DEV_PIN_SET;
@@ -41,6 +53,12 @@ static void fido_dev_set_option_flags(fido_dev_t *dev, const fido_cbor_info_t *i
     }
 }
 
+/**
+ * @brief Store PIN protocols received from the authenticator in the device object.
+ *
+ * @param dev The FIDO device to store the attributes in.
+ * @param info The parsed info received from the authenticator.
+ */
 static void fido_dev_set_protocol_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
     if(info->protocols & FIDO_PIN_PROTOCOL_1){
         dev->flags |= FIDO_DEV_PIN_PROTOCOL_1;
@@ -50,6 +68,15 @@ static void fido_dev_set_protocol_flags(fido_dev_t *dev, const fido_cbor_info_t 
     }
 }
 
+/**
+ * @brief Store several flags such as extensions received in the info object in the device for later use.
+ * 
+ * This allows that we don't have to keep the whole info object and only keep the data necessary to identify
+ * the authenticators features later on.
+ *
+ * @param dev The FIDO device to store the attributes in.
+ * @param info The parsed info received from the authenticator.
+ */
 static void fido_dev_set_flags(fido_dev_t *dev, const fido_cbor_info_t *info) {
     fido_dev_set_extension_flags(dev, info);
     fido_dev_set_option_flags(dev, info);
@@ -128,6 +155,12 @@ fail:
     return (r);
 }
 
+/**
+ * @brief Open a device and ensure that is a FIDO one by receiving an initialization response.
+ *
+ * @param dev
+ * @return int A FIDO_ERR
+ */
 static int fido_dev_open_rx(fido_dev_t *dev) {
     fido_cbor_info_t    info = { 0 };
     int                 reply_len;

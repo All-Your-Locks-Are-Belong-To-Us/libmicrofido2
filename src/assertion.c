@@ -112,6 +112,14 @@ static const uint8_t KEY_TYPE[] PROGMEM_MARKER = "type";
 static const uint8_t KEY_TYPE_PUBLIC_KEY[] PROGMEM_MARKER = "public-key";
 static const uint8_t KEY_ID[] PROGMEM_MARKER = "id";
 
+/**
+ * @brief CBOR decode the credential's data such as its type and id.
+ *
+ * @param key The CBOR key.
+ * @param assert The CBOR value.
+ * @param arg The assert reply argument to store the parsed data to.
+ * @return int FIDO_OK if performed successfully
+ */
 static int cbor_assert_decode_credential(const cb0r_t key, const cb0r_t value, void *arg) {
     if (!cbor_utf8string_is_definite(key)) {
         // Just ignore the entry according to https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-20210615.html#message-encoding.
@@ -142,7 +150,14 @@ static int cbor_assert_decode_credential(const cb0r_t key, const cb0r_t value, v
     return FIDO_OK;
 }
 
-// See https://www.w3.org/TR/webauthn-2/#authenticator-data
+/**
+ * @brief CBOR decode the auth data such as the RP ID hash and signature count.
+ *        See https://www.w3.org/TR/webauthn-2/#authenticator-data
+ *
+ * @param auth_data_raw The raw auth data.
+ * @param ca The reply entry to store the parsed data to.
+ * @return int FIDO_OK if performed successfully
+ */
 static int cbor_assert_decode_auth_data_inner(void* auth_data_raw, fido_assert_reply_t *ca) {
     uint8_t* auth_data_bytes = (uint8_t*) auth_data_raw;
 
@@ -163,6 +178,13 @@ static int cbor_assert_decode_auth_data_inner(void* auth_data_raw, fido_assert_r
     return FIDO_OK;
 }
 
+/**
+ * @brief Wrapper to decode the CBOR encoded authentication data.
+ *
+ * @param auth_data The CBOR encoded authentication data.
+ * @param ca The reply entry to store the parsed data to.
+ * @return int FIDO_OK if performed successfully
+ */
 static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(auth_data)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
@@ -177,6 +199,13 @@ static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_repl
     return cbor_assert_decode_auth_data_inner(ca->auth_data_raw, ca);
 }
 
+/**
+ * @brief Decode the assertion signature from the CBOR entry.
+ *
+ * @param signature The CBOR encoded signature data.
+ * @param ca The reply entry to store the parsed data to.
+ * @return int FIDO_OK if performed successfully
+ */
 static int cbor_assert_decode_signature(const cb0r_t signature, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(signature)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
@@ -189,6 +218,13 @@ static int cbor_assert_decode_signature(const cb0r_t signature, fido_assert_repl
     return FIDO_OK;
 }
 
+/**
+ * @brief Decode the large blob key from the CBOR entry.
+ *
+ * @param large_blob_key The CBOR encoded signature data.
+ * @param ca The reply entry to store the parsed data to.
+ * @return int FIDO_OK if performed successfully
+ */
 static int cbor_assert_decode_large_blob_key(const cb0r_t large_blob_key, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(large_blob_key)) {
         return FIDO_ERR_CBOR_UNEXPECTED_TYPE;
@@ -239,13 +275,16 @@ static int parse_get_assert_reply_entry(const cb0r_t key, const cb0r_t value, vo
     }
 }
 
-// TODO: function to set client data (and compute hash)
-
+/**
+ * @brief Transmit the request data to the authenticator.
+ *
+ * @param dev The device to communicate to.
+ * @param assert The assertion request data.
+ * @return int FIDO_OK if performed successfully
+ */
 static int fido_dev_get_assert_tx(
     fido_dev_t *dev,
-    fido_assert_t *assert,
-    const es256_pk_t *pk,
-    const fido_blob_t *ecdh
+    fido_assert_t *assert
 ) {
     // We do not know the size of the command buffer, yet, as extensions can have different length.
     // So we start with a sane value and try our luck until the buffer is large enough.
@@ -287,6 +326,14 @@ out:
     return ret;
 }
 
+/**
+ * @brief Receive the response data from the authenticator and parse the CBOR into the reply.
+ *
+ * @param dev The device to communicate to.
+ * @param assert The assertion request data.
+ * @param reply A pointer to the structure to store the parsed data to.
+ * @return int FIDO_OK if performed successfully
+ */
 static int fido_dev_get_assert_rx(
     fido_dev_t *dev,
     fido_assert_t *assert,
@@ -319,16 +366,22 @@ out:
     return ret;
 }
 
+/**
+ * @brief Perform the assertion transmission and receival and wait for their completion.
+ *
+ * @param dev The device to communicate to.
+ * @param assert The assertion request data.
+ * @param reply A pointer to the structure to store the parsed data to.
+ * @return int 0, if the check is successful
+ */
 static int fido_dev_get_assert_wait(
     fido_dev_t *dev,
     fido_assert_t *assert,
-    const es256_pk_t *pk,
-    const fido_blob_t *ecdh,
     fido_assert_reply_t *reply
 ) {
     int r;
 
-    if ((r = fido_dev_get_assert_tx(dev, assert, pk, ecdh)) != FIDO_OK ||
+    if ((r = fido_dev_get_assert_tx(dev, assert)) != FIDO_OK ||
         (r = fido_dev_get_assert_rx(dev, assert, reply)) != FIDO_OK)
         return (r);
 
@@ -349,8 +402,6 @@ void fido_assert_reset(fido_assert_t *assert) {
 }
 
 int fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert) {
-    fido_blob_t    *ecdh    = NULL;
-    es256_pk_t     *pk      = NULL;
     int             r;
 
     if (assert->rp_id.ptr == NULL) {
@@ -367,7 +418,7 @@ int fido_dev_get_assert(fido_dev_t *dev, fido_assert_t *assert) {
     }
 
     fido_assert_reply_reset(&assert->reply);
-    r = fido_dev_get_assert_wait(dev, assert, pk, ecdh, &assert->reply);
+    r = fido_dev_get_assert_wait(dev, assert, &assert->reply);
 
     return r;
 }
@@ -395,6 +446,13 @@ void fido_assert_set_extensions(fido_assert_t *assert, const fido_assert_ext_t e
     assert->ext = extensions;
 }
 
+/**
+ * @brief Check, that user presence or verification are performed successfully, when desired.
+ *
+ * @param auth_data_flags The flags retrieved in the auth_data from the authenticator.
+ * @param assert_opt The user defined options.
+ * @return int 0, if the check is successful
+ */
 static int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_assert_opt_t assert_opt) {
     int up = assert_opt & FIDO_ASSERT_OPTION_UP;
     int uv = assert_opt & FIDO_ASSERT_OPTION_UV;
@@ -413,6 +471,13 @@ static int fido_check_flags(fido_assert_auth_data_flags_t auth_data_flags, fido_
     return (0);
 }
 
+/**
+ * @brief Ensure that the hash of the relying party concurs with the expected one.
+ *
+ * @param rp_id The expected relying party id.
+ * @param obtained_hash The hash of the relying party id obtained from the authenticator.
+ * @return int 0, if the hash is correct
+ */
 static int fido_check_rp_id(const fido_assert_blob_t *rp_id, const uint8_t *obtained_hash) {
     uint8_t expected_hash[ASSERTION_AUTH_DATA_RPID_HASH_LEN] = {0};
     if(fido_sha256 == NULL) {

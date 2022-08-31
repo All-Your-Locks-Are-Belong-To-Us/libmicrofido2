@@ -13,7 +13,28 @@
 
 #include "dev.h"
 
+/**
+ * @brief Ensure that the device is correctly set up to receive data and
+ *        call the device's transport receive function.
+ * 
+ * @param d A pointer to the FIDO device.
+ * @param cmd The CTAP command to receive data from.
+ * @param buf A pointer to the destination buffer.
+ * @param len The size of the destination buffer.
+ * @return int FIDO_OK when the operation was successful.
+ */
 int fido_rx(fido_dev_t *d, const uint8_t cmd, void *buf, const size_t len);
+
+/**
+ * @brief Ensure that the device is correctly set up to transmit data and
+ *        call the device's transport transmit function.
+ * 
+ * @param d A pointer to the FIDO device.
+ * @param cmd The CTAP command to transmit.
+ * @param buf A pointer to the source buffer.
+ * @param len The size of the source buffer.
+ * @return int FIDO_OK when the operation was successful.
+ */
 int fido_tx(fido_dev_t *d, const uint8_t cmd, const void *buf, const size_t len);
 int fido_get_random(void *buf, size_t len);
 
