@@ -7,6 +7,9 @@ project(nrf52-libmicrofido C)
 
 if (CONFIG_NRF_SECURITY STREQUAL "y")
   add_compile_definitions(USE_HW_CRYPTO=1)
+  set(additional_libmicrofido2_cmake_flags
+    "-DENABLE_SOFTWARE_CRYPTO=OFF"
+  )
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -52,6 +55,7 @@ ExternalProject_Add(
   -DCMAKE_AR=${CMAKE_AR}
   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   -DZEPHYR=1
+  ${additional_libmicrofido2_cmake_flags}
   INSTALL_COMMAND         "" # No installation necessary, just build it.
   BUILD_BYPRODUCTS        ${LIBMICROFIDO2_LIB_DIR}/libmicrofido2.a
 )
