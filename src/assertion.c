@@ -113,7 +113,7 @@ static const uint8_t KEY_TYPE_PUBLIC_KEY[] PROGMEM_MARKER = "public-key";
 static const uint8_t KEY_ID[] PROGMEM_MARKER = "id";
 
 /**
- * @brief CBOR decode the credential's data such as its type and id.
+ * @brief CBOR decode the credential's data such as its type and ID.
  *
  * @param key The CBOR key.
  * @param assert The CBOR value.
@@ -327,7 +327,7 @@ out:
 }
 
 /**
- * @brief Receive the response data from the authenticator and parse the CBOR into the reply.
+ * @brief Receive the response data from the authenticator and parse the authenticator's response into the reply.
  *
  * @param dev The device to communicate to.
  * @param assert The assertion request data.

@@ -21,7 +21,7 @@
  * @param cmd The CTAP command to receive data from.
  * @param buf A pointer to the destination buffer.
  * @param len The size of the destination buffer.
- * @return int FIDO_OK if the operation was successful.
+ * @return int FIDO_OK if the read operation was successful.
  */
 int fido_rx(fido_dev_t *d, const uint8_t cmd, void *buf, const size_t len);
 
