@@ -66,7 +66,7 @@ void fido_cbor_info_reset(fido_cbor_info_t *ci) {
  * 
  * @param value The value containing the AAGUID.
  * @param ci The info to copy the ID to.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int copy_aaguid(const cb0r_t value, fido_cbor_info_t *ci) {
     if (!cbor_bytestring_is_definite(value) || value->length != sizeof(ci->aaguid)) {
@@ -81,7 +81,7 @@ static int copy_aaguid(const cb0r_t value, fido_cbor_info_t *ci) {
  * 
  * @param value The value to decode.
  * @param target A pointer to a location to store the decoded value at.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int decode_uint64(const cb0r_t value, uint64_t *target) {
     if (value->type != CB0R_INT) {
@@ -226,7 +226,7 @@ static int cbor_info_decode_options(const cb0r_t key, const cb0r_t value, void *
  * 
  * @param element The cb0r element containing the byte representing the protocol
  * @param arg User-passed argument (here: CBOR info).
- * @return int FIDO_OK if protocol could be parsed.
+ * @return int FIDO_OK if the protocol could be parsed.
  */
 static int cbor_info_decode_protocol(const cb0r_t element, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
@@ -253,7 +253,7 @@ static int cbor_info_decode_protocol(const cb0r_t element, void *arg) {
  * 
  * @param element The cb0r element representing the transport
  * @param arg User-passed argument (here: CBOR info).
- * @return int FIDO_OK if transport could be parsed.
+ * @return int FIDO_OK if the transport could be parsed.
  */
 static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
@@ -281,7 +281,7 @@ static int cbor_info_decode_transport(const cb0r_t element, void *arg) {
  * @param key The cb0r element representing the algorithm key
  * @param value The cb0r element representing the algorithm identifier
  * @param arg User-passed argument (here: CBOR info).
- * @return int FIDO_OK if algorithm could be parsed.
+ * @return int FIDO_OK if the algorithm could be parsed.
  */
 static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value, void *arg) {
     fido_cbor_info_t *ci = (fido_cbor_info_t*)arg;
@@ -327,7 +327,7 @@ static int cbor_info_decode_algorithm_entry(const cb0r_t key, const cb0r_t value
  * 
  * @param element The cb0r element representing the algorithm map
  * @param arg User-passed argument (here: CBOR info).
- * @return int FIDO_OK if map could be parsed.
+ * @return int FIDO_OK if the map could be parsed.
  */
 static int cbor_info_decode_algorithm(const cb0r_t element, void *arg) {
     if (element->type != CB0R_MAP) {
@@ -343,7 +343,7 @@ static int cbor_info_decode_algorithm(const cb0r_t element, void *arg) {
  * @param key The cb0r element representing the map key
  * @param value The cb0r element representing the map value
  * @param arg User-passed argument (here: CBOR info).
- * @return int FIDO_OK if entry could be parsed.
+ * @return int FIDO_OK if the entry could be parsed.
  */
 static int parse_info_reply_entry(const cb0r_t key, const cb0r_t value, void *arg) {
     if (key->type != CB0R_INT || key->value > UINT8_MAX) {
@@ -390,7 +390,7 @@ static int parse_info_reply_entry(const cb0r_t key, const cb0r_t value, void *ar
  * @brief Send a CTAP authenticatorGetInfo command.
  * 
  * @param dev The device to communicate to.
- * @return int FIDO_OK if transmission succeeded.
+ * @return int FIDO_OK if the transmission succeeded.
  */
 static int fido_dev_get_cbor_info_tx(fido_dev_t *dev) {
     const unsigned char cbor[] = { CTAP_CBOR_GETINFO };
@@ -410,7 +410,7 @@ static int fido_dev_get_cbor_info_tx(fido_dev_t *dev) {
  * 
  * @param dev The device to communicate to.
  * @param ci The fido_cbor_info_t to write the parsed reply to.
- * @return int FIDO_OK if transmission succeeded.
+ * @return int FIDO_OK if the transmission succeeded.
  */
 static int fido_dev_get_cbor_info_rx(fido_dev_t *dev, fido_cbor_info_t *ci) {
     unsigned char   msg[dev->maxmsgsize];

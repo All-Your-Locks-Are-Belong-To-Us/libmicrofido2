@@ -134,7 +134,7 @@ static bool largeblob_array_check(fido_blob_t *array) {
  * @param dev The device to read the large blob from.
  * @param offset The offset in the large blob to start reading from.
  * @param count The amount of bytes to read.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int largeblob_get_tx(fido_dev_t *dev, size_t offset, size_t count) {
     // 32 > 1 byte command + 1 byte map header + 1 byte get key + max. 9 byte get value + 1 byte offset key + max. 9 byte offset value
@@ -192,7 +192,7 @@ static int parse_largeblob_reply(const cb0r_t key, const cb0r_t value, void *arg
  *
  * @param dev The device to read the answer from.
  * @param chunk The chunk to store the returned large blob chunk in. Must already be allocated.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int largeblob_get_rx(fido_dev_t *dev, fido_blob_t *chunk) {
     uint8_t msg[dev->maxmsgsize];
@@ -285,7 +285,7 @@ typedef struct largeblob_array_entry {
  * @param compressed Pointer to the compressed data.
  * @param compressed_len Length of the compressed data.
  * @param uncompressed_len_expected Expected length of the uncompressed data, to ensure that we got everything.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compressed_len, size_t uncompressed_len_expected) {
     uint32_t uncompressed_len_actual = out->max_length;
@@ -306,7 +306,7 @@ static int fido_uncompress(fido_blob_t* out, uint8_t *compressed, size_t compres
  * @param key The CBOR key value of the entry.
  * @param value The CBOR encoded value.
  * @param data The largeblob array entry object to store the parsed data to.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
     largeblob_array_entry_t *entry = (largeblob_array_entry_t*) data;
@@ -362,7 +362,7 @@ static int largeblob_parse_array_entry(cb0r_t key, cb0r_t value, void *data) {
  *
  * @param value The CBOR encoded value.
  * @param data The largeblob array lookup parameters. This also contains the buffer where we write the uncompressed data to.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int largeblob_array_lookup(cb0r_t value, void* data) {
     largeblob_array_lookup_param_t *param = (largeblob_array_lookup_param_t*) data;

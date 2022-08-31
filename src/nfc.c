@@ -25,7 +25,7 @@ static const uint8_t fido_version_fido2[] PROGMEM_MARKER    = "FIDO_2_0";
  * @param dev The device to receive data from.
  * @param buf The buffer to write the received data to.
  * @param len The length of the buffer.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int rx_init(fido_dev_t *dev, unsigned char *buf, const size_t len)
 {
@@ -69,7 +69,7 @@ static int rx_init(fido_dev_t *dev, unsigned char *buf, const size_t len)
  * @param sw The buffer to write the status word to.
  * @param buf A pointer to a pointer to a buffer where the received data is located. The pointer to the buffer will be advanced.
  * @param count The remaining length of the buffer, will be reduced.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int rx_apdu(fido_dev_t *dev, uint8_t sw[2], unsigned char **buf, size_t *count) {
     uint8_t f[256 + 2];
@@ -99,7 +99,7 @@ fail:
  *
  * @param dev The device to transmit data to.
  * @param count The amount of data expected to receive.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int tx_get_response(fido_dev_t *dev, uint8_t count)
 {
@@ -165,7 +165,7 @@ static int rx_msg(fido_dev_t *dev, unsigned char *buf, const size_t len) {
  * @param dev The device to receive data from.
  * @param buf The buffer to write the received data to.
  * @param len The length of the buffer.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int rx_cbor(fido_dev_t *dev, unsigned char *buf, const size_t count) {
     int r;
@@ -183,7 +183,7 @@ static int rx_cbor(fido_dev_t *dev, unsigned char *buf, const size_t count) {
  * @param cmd The CTAP command that was executed.
  * @param buf The buffer to write the response to.
  * @param len The length of the buffer.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int nfc_rx(struct fido_dev *dev, const uint8_t cmd, unsigned char *buf, const size_t len) {
     switch (cmd) {
@@ -207,7 +207,7 @@ static int nfc_rx(struct fido_dev *dev, const uint8_t cmd, unsigned char *buf, c
  * @param payload The payload to send.
  * @param payload_len The length of the payload.
  * @param cla_flags The ISO7816 class flags to use.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int tx_short_apdu(
     fido_dev_t *dev,
@@ -260,7 +260,7 @@ fail:
  *
  * @param dev The device to receive data from.
  * @param apdu The ISO7816 APDU to send.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
     uint16_t apdu_len = apdu->payload_len;
@@ -291,7 +291,7 @@ static int nfc_do_tx(fido_dev_t *dev, const iso7816_apdu_t *apdu) {
  * @param cmd The CTAP command.
  * @param buf The payload to send.
  * @param len The length of the payload.
- * @return int FIDO_OK when the operation was successful.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int nfc_tx(struct fido_dev *dev, const uint8_t cmd, const unsigned char *buf, const size_t len) {
     iso7816_apdu_t apdu;

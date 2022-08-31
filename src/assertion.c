@@ -118,7 +118,7 @@ static const uint8_t KEY_ID[] PROGMEM_MARKER = "id";
  * @param key The CBOR key.
  * @param assert The CBOR value.
  * @param arg The assert reply argument to store the parsed data to.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int cbor_assert_decode_credential(const cb0r_t key, const cb0r_t value, void *arg) {
     if (!cbor_utf8string_is_definite(key)) {
@@ -156,7 +156,7 @@ static int cbor_assert_decode_credential(const cb0r_t key, const cb0r_t value, v
  *
  * @param auth_data_raw The raw auth data.
  * @param ca The reply entry to store the parsed data to.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int cbor_assert_decode_auth_data_inner(void* auth_data_raw, fido_assert_reply_t *ca) {
     uint8_t* auth_data_bytes = (uint8_t*) auth_data_raw;
@@ -183,7 +183,7 @@ static int cbor_assert_decode_auth_data_inner(void* auth_data_raw, fido_assert_r
  *
  * @param auth_data The CBOR encoded authentication data.
  * @param ca The reply entry to store the parsed data to.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(auth_data)) {
@@ -204,7 +204,7 @@ static int cbor_assert_decode_auth_data(const cb0r_t auth_data, fido_assert_repl
  *
  * @param signature The CBOR encoded signature data.
  * @param ca The reply entry to store the parsed data to.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int cbor_assert_decode_signature(const cb0r_t signature, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(signature)) {
@@ -223,7 +223,7 @@ static int cbor_assert_decode_signature(const cb0r_t signature, fido_assert_repl
  *
  * @param large_blob_key The CBOR encoded signature data.
  * @param ca The reply entry to store the parsed data to.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int cbor_assert_decode_large_blob_key(const cb0r_t large_blob_key, fido_assert_reply_t *ca) {
     if (!cbor_bytestring_is_definite(large_blob_key)) {
@@ -244,7 +244,7 @@ static int cbor_assert_decode_large_blob_key(const cb0r_t large_blob_key, fido_a
  * @param key The cb0r element representing the map key
  * @param value The cb0r element representing the map value
  * @param arg User-passed argument (here: assertion reply).
- * @return int FIDO_OK if entry could be parsed.
+ * @return int FIDO_OK if the entry could be parsed.
  */
 static int parse_get_assert_reply_entry(const cb0r_t key, const cb0r_t value, void *arg) {
     if (key->type != CB0R_INT || key->value > UINT8_MAX) {
@@ -280,7 +280,7 @@ static int parse_get_assert_reply_entry(const cb0r_t key, const cb0r_t value, vo
  *
  * @param dev The device to communicate to.
  * @param assert The assertion request data.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int fido_dev_get_assert_tx(
     fido_dev_t *dev,
@@ -332,7 +332,7 @@ out:
  * @param dev The device to communicate to.
  * @param assert The assertion request data.
  * @param reply A pointer to the structure to store the parsed data to.
- * @return int FIDO_OK if performed successfully
+ * @return int FIDO_OK if the operation was successful.
  */
 static int fido_dev_get_assert_rx(
     fido_dev_t *dev,

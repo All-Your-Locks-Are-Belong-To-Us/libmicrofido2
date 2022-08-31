@@ -114,8 +114,8 @@ bool fido_dev_is_fido(fido_dev_t *dev) {
 /**
  * @brief Open a FIDO device sending an initialization command.
  *
- * @param dev
- * @return int A FIDO_ERR
+ * @param dev The FIDO device to open.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int fido_dev_open_tx(fido_dev_t *dev) {
     int r;
@@ -158,8 +158,8 @@ fail:
 /**
  * @brief Open a device and ensure that is a FIDO one by receiving an initialization response.
  *
- * @param dev
- * @return int A FIDO_ERR
+ * @param dev The FIDO device to open.
+ * @return int FIDO_OK if the operation was successful.
  */
 static int fido_dev_open_rx(fido_dev_t *dev) {
     fido_cbor_info_t    info = { 0 };
