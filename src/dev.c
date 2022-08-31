@@ -101,17 +101,22 @@ static int fido_dev_open_tx(fido_dev_t *dev) {
 
     if (dev->io.open == NULL || dev->io.close == NULL) {
         fido_log_debug("%s: NULL open/close", __func__);
-        return (FIDO_ERR_INVALID_ARGUMENT);
+        return FIDO_ERR_INVALID_ARGUMENT;
     }
 
-    if (fido_get_random(&dev->nonce, sizeof(dev->nonce)) < 0) {
+    if(fido_get_random == NULL) {
+        fido_log_debug("%s: fido_get_random is NULL", __func__);
+        return FIDO_ERR_INTERNAL;
+    }
+
+    if (fido_get_random((uint8_t*) &dev->nonce, sizeof(dev->nonce)) < 0) {
         fido_log_debug("%s: fido_get_random", __func__);
-        return (FIDO_ERR_INTERNAL);
+        return FIDO_ERR_INTERNAL;
     }
 
     if ((dev->io_handle = dev->io.open()) == NULL) {
         fido_log_debug("%s: dev->io.open", __func__);
-        return (FIDO_ERR_INTERNAL);
+        return FIDO_ERR_INTERNAL;
     }
 
     if (fido_tx(dev, CTAP_CMD_INIT, &dev->nonce, sizeof(dev->nonce)) < 0) {
@@ -120,12 +125,12 @@ static int fido_dev_open_tx(fido_dev_t *dev) {
         goto fail;
     }
 
-    return (FIDO_OK);
+    return FIDO_OK;
 fail:
     dev->io.close(dev->io_handle);
     dev->io_handle = NULL;
 
-    return (r);
+    return r;
 }
 
 static int fido_dev_open_rx(fido_dev_t *dev) {

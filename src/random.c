@@ -11,7 +11,12 @@
 
 #include <stdint.h>
 
-int fido_get_random(void *buf, size_t len) {
+#if defined(NO_SOFTWARE_RNG)
+fido_get_random_t fido_get_random = NULL;
+#else
+int get_random(const uint8_t *buf, size_t random_len) {
     // TODO: Implement randomness here according to the standard.
     return 0;
 }
+fido_get_random_t fido_get_random = get_random;
+#endif

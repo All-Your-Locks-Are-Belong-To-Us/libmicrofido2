@@ -117,6 +117,11 @@ if(NOT USE_SOFTWARE_CRYPTO_SHA512)
     add_compile_definitions(NO_SOFTWARE_CRYPTO_SHA512)
 endif()
 
+option(USE_SOFTWARE_RNG "include software RNG" ON)
+if(NOT USE_SOFTWARE_RNG)
+    add_compile_definitions(NO_SOFTWARE_RNG)
+endif()
+
 #######################################
 # External libraries
 
